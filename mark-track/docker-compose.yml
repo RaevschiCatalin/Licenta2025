@@ -1,8 +1,11 @@
+networks:
+  app_network:
+    driver: bridge
 services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
@@ -10,32 +13,34 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-    environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
+    env_file:
+      - .env
+    networks:
+      - app_network
 
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     volumes:
       - ./backend:/app
-      - ./backend/credentials/marktrack-655e8-firebase-adminsdk-uev46-1af6e0dced.json:/app/credentials/marktrack-655e8-firebase-adminsdk-uev46-1af6e0dced.json
-    environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/marktrack-655e8-firebase-adminsdk-uev46-1af6e0dced.json
     env_file:
       - ./backend/credentials/.env
+    networks:
+      - app_network
 
-#  reverse-proxy:
-#    image: traefik
-#    command:
-#      - "--api.insecure=true"
-#      - "--providers.docker"
-#    ports:
-#      - "80:80"
-#      - "8000:8000"
-#    volumes:
-#        - /var/run/docker.sock:/var/run/docker.sock
-
-
+  postgres:
+    image: postgres:latest
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+volumes:
+  postgres_data:
