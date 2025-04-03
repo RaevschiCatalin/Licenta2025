@@ -1,4 +1,4 @@
-# MarkTrack
+# marktrack
 
 ## The Online Gradebook That Puts You in Control!
 
@@ -30,68 +30,74 @@ You have two options to run MarkTrack: using Docker Compose or running the devel
 #### Option 1: Using Docker Compose
 
 1. Clone the repository:
-    ```sh
-    git clone https://github.com/RaevschiCatalin/MarkTrack.git
-    cd MarkTrack
-    ```
+
+   ```sh
+   git clone https://github.com/RaevschiCatalin/MarkTrack.git
+   cd MarkTrack
+   ```
 
 2. Build and run the application using Docker Compose:
-    ```sh
-    docker-compose up --build
-    ```
+   ```sh
+   docker-compose up --build
+   ```
 
 #### Option 2: Running the Development Server Directly
 
 1. Clone the repository:
-    ```sh
-    git clone https://github.com/RaevschiCatalin/MarkTrack.git
-    cd MarkTrack
-    ```
+
+   ```sh
+   git clone https://github.com/RaevschiCatalin/MarkTrack.git
+   cd MarkTrack
+   ```
 
 2. Install dependencies:
-    ```sh
-    npm install
-    ```
+
+   ```sh
+   npm install
+   ```
 
 3. Run the development server for the frontend:
-    ```sh
-    npm run dev
-    # or
-    yarn dev
-    # or
-    pnpm dev
-    # or
-    bun dev
-    ```
+
+   ```sh
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   # or
+   bun dev
+   ```
 
 4. Navigate to the backend directory:
-    ```sh
-    cd backend
-    ```
+
+   ```sh
+   cd backend
+   ```
 
 5. Run the backend server:
-    ```sh
-    uvicorn app:main --reload --host 0.0.0.0 --port 8080
-    ```
+   ```sh
+   uvicorn app:main --reload --host 0.0.0.0 --port 8080
+   ```
 
 ### 🔧 Environment Setup
 
 1. Create a `.env` file in the root directory with your Firebase credentials:
-    ```env
-    NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
-    NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
-    ```
+
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
+   ```
 
 2. Create a `credentials` folder in the `backend` directory and place your Firebase admin JSON file there.
 
 3. Create another `.env` file in the `backend` directory with your JWT secret key:
-    ```env
-    SECRET_KEY=your_secret_key
-    ```
+   ```env
+   SECRET_KEY=your_secret_key
+   ```
 
 ### 🌐 Website
 
@@ -100,6 +106,7 @@ Visit the MarkTrack website at [mark-track.vercel.app](https://mark-track.vercel
 ### 📚 Learn More
 
 To learn more about the technologies used, check out these resources:
+
 - [Next.js Documentation](https://nextjs.org/docs)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Firebase Documentation](https://firebase.google.com/docs)
