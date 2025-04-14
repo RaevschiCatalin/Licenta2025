@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { postRequest } from "@/context/api";
+import { postRequest, getRequestWithParams } from "@/context/api";
 import Loader from "@/components/Loader";
 
 interface ProfileData {
@@ -13,14 +13,15 @@ interface ProfileData {
     email: string;
     subject_name?: string;
     student_id?: string;
-    father_name?: string;
     gov_number?: string;
+    class_name?: string;
 }
 
 export default function Profile() {
     const { userRole, logout } = useAuth();
     const [profileData, setProfileData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const [uid, setUid] = useState<string | null>(null);
 
@@ -37,23 +38,25 @@ export default function Profile() {
             setLoading(true);
             try {
                 let response;
-                const requestBody = { uid };
-
                 if (userRole === "student") {
-                    response = await postRequest('/profiles/get-student-profile', requestBody);
+                    response = await postRequest('/profiles/get-student-profile', { uid });
                 } else if (userRole === "teacher") {
-                    response = await postRequest('/profiles/get-teacher-profile', requestBody);
+                    response = await getRequestWithParams('/profiles/get-teacher-profile', { uid });
                 }
 
-                if (response) {
-                    setProfileData(response);
+                if (response?.status === "success") {
+                    setProfileData(response.data);
+                    setError(null);
                 } else {
-                    console.error("Error fetching profile data.");
+                    setError(response?.message || "Error fetching profile data");
+                    setProfileData(null);
                 }
             } catch (error) {
                 console.error("Failed to fetch profile:", error);
+                setError("Failed to fetch profile data");
+                setProfileData(null);
             } finally {
-                setTimeout(() => setLoading(false), 1000);
+                setLoading(false);
             }
         };
 
@@ -72,6 +75,16 @@ export default function Profile() {
         return (
             <div className="min-h-screen flex justify-center items-center">
                 <Loader />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex justify-center items-center">
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <p>{error}</p>
+                </div>
             </div>
         );
     }
@@ -117,14 +130,14 @@ export default function Profile() {
                             </div>
                         )}
 
-                        {/* Additional Fields */}
-                        {profileData.father_name && (
+                        {userRole === "student" && profileData.class_name && (
                             <div>
-                                <h2 className="text-lg font-bold text-gray-800">Father&apos;s Name:</h2>
-                                <p className="text-gray-600">{profileData.father_name}</p>
+                                <h2 className="text-lg font-bold text-gray-800">Class:</h2>
+                                <p className="text-gray-600">{profileData.class_name}</p>
                             </div>
                         )}
 
+                        {/* Additional Fields */}
                         {profileData.gov_number && (
                             <div>
                                 <h2 className="text-lg font-bold text-gray-800">Government Number:</h2>

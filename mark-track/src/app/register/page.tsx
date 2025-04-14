@@ -2,130 +2,135 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { auth } from '@/config/firebaseConfig';
 import { useRouter } from 'next/navigation';
-import { FirebaseError } from 'firebase/app';
-import {postRequest} from "@/context/api";
+import { postRequest } from '@/context/api';
 
 export default function Register() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
-	const [message, setMessage] = useState('');
 	const [error, setError] = useState('');
-	const [termsAccepted, setTermsAccepted] = useState(false);
 	const router = useRouter();
 
-	const handleRegister = async () => {
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		console.log('Registration form submitted');
+		
 		if (password !== confirmPassword) {
-			setError("Passwords do not match.");
-			return;
-		}
-
-		if (!termsAccepted) {
-			setError("You must accept the terms and conditions.");
+			console.error('Password mismatch');
+			setError("Passwords do not match");
 			return;
 		}
 
 		try {
-			const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-			const user = userCredential.user;
-			if (!user.uid) throw new Error("Unable to retrieve user UID.");
-
-			localStorage.setItem("uid", user.uid);
-			await sendEmailVerification(user);
-
-			await postRequest('/auth/register', { uid: user.uid, email: user.email });
-			setMessage("Registration successful! Check your email and verify your account.");
-			setTimeout(()=>{
-				router.push("/enterCode")
-			},2000);
-		} catch (error: unknown) {
-			if (error instanceof FirebaseError) {
-				setError(`Registration failed: ${error.message}`);
+			console.log('Attempting to register with:', { email, password });
+			const response = await postRequest('/auth/register', {
+				email,
+				password
+			});
+			console.log('Registration response:', response);
+			
+			if (response && response.uid) {
+				localStorage.setItem('uid', response.uid);
+				router.push('/enterCode');
 			} else {
-				setError("Unexpected error. Please try again.");
+				setError("Invalid response from server");
+			}
+		} catch (error: any) {
+			console.error('Registration error:', error);
+			if (error.response?.data?.detail) {
+				setError(error.response.data.detail);
+			} else if (error instanceof Error) {
+				setError(error.message || "Registration failed");
+			} else {
+				setError("An unexpected error occurred");
 			}
 		}
 	};
 
 	return (
-		<div className="flex justify-center items-center h-screen pb-10 pt-20">
-			<div className="mx-auto flex w-full max-w-sm flex-col gap-6">
-				<div className="flex flex-col items-center">
-					<h1 className="text-3xl font-semibold">Sign Up</h1>
-					<p className="text-sm">Create a MarkTrack account</p>
+		<div className="min-h-screen flex items-center justify-center bg-gray-50">
+			<div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+				<div>
+					<h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+						Create your account
+					</h2>
 				</div>
-				<div className="form-group">
-					<div className="form-field">
-						<label className="form-label">Email address</label>
-						<input
-							placeholder="john.johnes@institution.com"
-							type="email"
-							className="input input-block"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-						/>
-						<label className="form-label">
-							<span className="form-label-alt">Enter your institutional email.</span>
-						</label>
-					</div>
-					<div className="form-field">
-						<label className="form-label">Password</label>
-						<div className="form-control">
+				<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+					<div className="rounded-md shadow-sm -space-y-px">
+						<div>
+							<label htmlFor="email" className="sr-only">
+								Email address
+							</label>
 							<input
-								placeholder="Password"
+								id="email"
+								name="email"
+								type="email"
+								autoComplete="email"
+								required
+								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+								placeholder="john.johnes@institution.com"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+							/>
+							<p className="text-xs text-gray-500 mt-1">Enter your institutional email.</p>
+						</div>
+						<div>
+							<label htmlFor="password" className="sr-only">
+								Password
+							</label>
+							<input
+								id="password"
+								name="password"
 								type="password"
-								className="input input-block"
+								autoComplete="new-password"
+								required
+								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+								placeholder="Password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 							/>
+							<p className="text-xs text-gray-500 mt-1">Enter your password</p>
 						</div>
-					</div>
-					<div className="form-field">
-						<label className="form-label">Repeat Password</label>
-						<div className="form-control">
+						<div>
+							<label htmlFor="confirmPassword" className="sr-only">
+								Confirm Password
+							</label>
 							<input
-								placeholder="Password"
+								id="confirmPassword"
+								name="confirmPassword"
 								type="password"
-								className="input input-block"
+								autoComplete="new-password"
+								required
+								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+								placeholder="Password"
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}
 							/>
+							<p className="text-xs text-gray-500 mt-1">Confirm your password</p>
 						</div>
 					</div>
-					<div className="form-field">
-						<label className="form-control items-center">
-							<input
-								type="checkbox"
-								className="checkbox"
-								checked={termsAccepted}
-								onChange={() => setTermsAccepted(!termsAccepted)}
-							/>
-							<span className="ml-2">
-                I agree to the <Link href="/terms" className="link link-primary">terms and conditions</Link>.
-              </span>
-						</label>
-					</div>
-					<div className="form-field pt-5">
-						<div className="form-control justify-between">
-							<button
-								type="button"
-								className="btn btn-primary w-full hover:bg-primary-dark"
-								onClick={handleRegister}
-							>
-								Sign Up
-							</button>
+
+					{error && (
+						<div className="text-red-500 text-sm text-center">
+							{error}
 						</div>
+					)}
+
+					<div>
+						<button
+							type="submit"
+							className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+						>
+							Register
+						</button>
 					</div>
-					{error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-					{message && <p className="text-green-500 text-sm mt-2">{message}</p>}
-					<div className="form-field">
-						<div className="form-control justify-center">
-							<Link href="/login" className="link link-underline-hover link-primary text-sm">Already have an account? Sign in.</Link>
-						</div>
-					</div>
+				</form>
+
+				<div className="text-sm text-center">
+					<Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+						Already have an account? Sign in
+					</Link>
 				</div>
 			</div>
 		</div>

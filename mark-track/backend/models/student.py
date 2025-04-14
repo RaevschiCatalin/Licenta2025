@@ -10,6 +10,14 @@ class StudentDetails(BaseModel):
     father_name: str
 
 
+class StudentProfileRequest(BaseModel):
+    first_name: str
+    last_name: str
+    father_name: str
+    gov_number: str
+    user_id: str
+
+
 class AddStudentToClass(BaseModel):
     student_id: str
 

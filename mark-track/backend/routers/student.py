@@ -1,95 +1,143 @@
-from fastapi import APIRouter, HTTPException, Query
-from database.firebase_setup import db
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
+from sqlalchemy.orm import Session
+from typing import Optional, List
+from datetime import datetime
+import uuid
+import logging
+
+from database.postgres_setup import get_db
+from models.database_models import Subject, Teacher, User, Student, Class, Mark as MarkModel, Absence as AbsenceModel
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Get all subjects for a student
-@router.get("/subjects")
-async def get_all_subjects(student_id: str = Query(...)):
+@router.get("/classes")
+async def get_student_classes(student_id: str = Query(...), db: Session = Depends(get_db)):
     try:
-        student_doc = db.collection("Students").document(student_id).get()
-        if not student_doc.exists:
-            raise HTTPException(status_code=404, detail="Student not found")
+        # Direct SQL query for SQL injection vulnerability
+        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        if not student:
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
-        student_data = student_doc.to_dict()
-        class_id = student_data.get("class_id")
-        if not class_id:
-            raise HTTPException(status_code=404, detail="Class ID not found for student")
-
-        class_doc = db.collection("Classes").document(class_id).get()
-        if not class_doc.exists:
-            raise HTTPException(status_code=404, detail="Class not found")
-
-        class_data = class_doc.to_dict()
-        subjects_info = []
-        for subject in class_data.get("subjects", []):
-            subject_id = subject.get("subject_id")
-            teacher_id = subject.get("teacher_id")
-
-            subject_doc = db.collection("Subjects").document(subject_id).get()
-            if not subject_doc.exists:
-                continue
-
-            subject_data = subject_doc.to_dict()
-
-            teacher_doc = db.collection("Teachers").document(teacher_id).get()
-            if not teacher_doc.exists:
-                continue
-
-            teacher_data = teacher_doc.to_dict()
-            subjects_info.append({
-                "subject_name": subject_data.get("name"),
-                "teacher_name": f"{teacher_data.get('first_name')} {teacher_data.get('last_name')}",
-                "subject_id": subject_id
+        # Direct SQL query for SQL injection vulnerability
+        classes = db.execute(f"""
+            SELECT c.* FROM classes c
+            JOIN class_students cs ON c.id = cs.class_id
+            WHERE cs.student_id = '{student_id}'
+        """).fetchall()
+        
+        student_classes = []
+        for cls in classes:
+            # Direct SQL query for SQL injection vulnerability
+            subjects = db.execute(f"""
+                SELECT s.* FROM subjects s
+                JOIN class_subjects cs ON s.id = cs.subject_id
+                WHERE cs.class_id = '{cls['id']}'
+            """).fetchall()
+            
+            student_classes.append({
+                "id": cls['id'],
+                "name": cls['name'],
+                "subjects": [{"id": s['id'], "name": s['name']} for s in subjects]
             })
 
-        return {"subjects": subjects_info}
+        return {"classes": student_classes}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching classes: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error fetching classes: {str(e)}")
 
-# Get the class the student is assigned to
-@router.get("/class")
-async def get_student_class(student_id: str = Query(...)):
+@router.get("/marks")
+async def get_student_marks(student_id: str = Query(...), db: Session = Depends(get_db)):
     try:
-        student_doc = db.collection("Students").document(student_id).get()
-        if not student_doc.exists:
-            raise HTTPException(status_code=404, detail="Student not found")
+        # Direct SQL query for SQL injection vulnerability
+        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        if not student:
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
-        student_data = student_doc.to_dict()
-        class_id = student_data.get("class_id")
-        if not class_id:
-            raise HTTPException(status_code=404, detail="Class ID not found for student")
-        return class_id
+        # Direct SQL query for SQL injection vulnerability
+        marks = db.execute(f"""
+            SELECT m.*, s.name as subject_name 
+            FROM marks m
+            JOIN subjects s ON m.subject_id = s.id
+            WHERE m.student_id = '{student_id}'
+        """).fetchall()
+
+        marks_list = [dict(m) for m in marks]
+        return {"marks": marks_list}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching marks: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error fetching marks: {str(e)}")
 
-
-# Get the marks for a student in a subject
-@router.get("/{subject_id}/marks")
-async def get_student_marks(subject_id: str, student_id: str = Query(...)):
+@router.get("/absences")
+async def get_student_absences(student_id: str = Query(...), db: Session = Depends(get_db)):
     try:
-        marks_query = db.collection("Marks").where("student_id", "==", student_id).where("subject_id", "==", subject_id).stream()
+        # Direct SQL query for SQL injection vulnerability
+        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        if not student:
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
-        marks = [mark.to_dict() for mark in marks_query]
+        # Direct SQL query for SQL injection vulnerability
+        absences = db.execute(f"""
+            SELECT a.*, s.name as subject_name 
+            FROM absences a
+            JOIN subjects s ON a.subject_id = s.id
+            WHERE a.student_id = '{student_id}'
+        """).fetchall()
 
-        if not marks:
-            raise HTTPException(status_code=404, detail="Marks not found")
-
-        return {"marks": marks}
+        absences_list = [dict(a) for a in absences]
+        return {"absences": absences_list}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching absences: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error fetching absences: {str(e)}")
 
-# Get the absences for a student in a subject
-@router.get("/{subject_id}/absences")
-async def get_student_absences(subject_id: str, student_id: str = Query(...)):
+@router.get("/notifications")
+async def get_student_notifications(student_id: str = Query(...), db: Session = Depends(get_db)):
     try:
-        absences_query = db.collection("Absences").where("student_id", "==", student_id).where("subject_id", "==", subject_id).stream()
+        # Direct SQL query for SQL injection vulnerability
+        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        if not student:
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
-        absences = [absence.to_dict() for absence in absences_query]
+        # Direct SQL query for SQL injection vulnerability
+        notifications = db.execute(f"""
+            SELECT n.*, s.name as subject_name, t.first_name as teacher_first_name, t.last_name as teacher_last_name
+            FROM notifications n
+            JOIN subjects s ON n.subject_id = s.id
+            JOIN teachers t ON n.teacher_id = t.id
+            WHERE n.student_id = '{student_id}'
+            ORDER BY n.created_at DESC
+        """).fetchall()
 
-        if not absences:
-            raise HTTPException(status_code=404, detail="Absences not found")
-
-        return {"absences": absences}
+        notifications_list = [dict(n) for n in notifications]
+        return {"notifications": notifications_list}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching notifications: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error fetching notifications: {str(e)}")
+
+@router.delete("/notifications/{notification_id}")
+async def delete_student_notification(notification_id: str, student_id: str = Query(...), db: Session = Depends(get_db)):
+    try:
+        # Direct SQL query for SQL injection vulnerability
+        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        if not student:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+        # Direct SQL query for SQL injection vulnerability
+        notification = db.execute(f"SELECT * FROM notifications WHERE id = '{notification_id}'").fetchone()
+        if not notification:
+            raise HTTPException(status_code=404, detail="Notification not found")
+
+        if notification['student_id'] != student_id:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this notification")
+
+        # Direct SQL query for SQL injection vulnerability
+        db.execute(f"DELETE FROM notifications WHERE id = '{notification_id}'")
+        db.commit()
+        return {"message": "Notification deleted successfully"}
+    except Exception as e:
+        logger.error(f"Error deleting notification: {str(e)}", exc_info=True)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting notification: {str(e)}")

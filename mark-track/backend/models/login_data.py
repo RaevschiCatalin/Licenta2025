@@ -1,5 +1,5 @@
-from pydantic import BaseModel
+# from pydantic import BaseModel
 
-
-class LoginData(BaseModel):
-    token: str
+# class LoginData(BaseModel):
+#     email: str
+#     password: str  # Plaintext password, super insecure

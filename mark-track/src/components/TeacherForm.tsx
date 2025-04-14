@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {getRequest, postRequest} from '@/context/api';
 import { useRouter } from 'next/navigation';
+import { getRequest, postRequest } from '@/context/api';
+import Loader from './Loader';
 
 interface Subject {
     id: string;
@@ -19,26 +20,33 @@ export default function TeacherForm() {
     const [selectedSubject, setSelectedSubject] = useState<string | null>("");
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
+    // Super insecure: No rate limiting or protection against enumeration
     useEffect(() => {
         const fetchSubjects = async () => {
             try {
-                const data = await getRequest('/subjects/get-subjects');
-
-                if (data && Array.isArray(data.subjects)) {
-                    setSubjects(data.subjects);
+                const data = await getRequest('/subjects');
+                if (data && Array.isArray(data)) {
+                    setSubjects(data);
                 } else {
                     setError('Unexpected data format received.');
                 }
-            } catch {
-                setError('Failed to load subjects.');
+            } catch (err) {
+                console.error('Error fetching subjects:', err);
+                if (err instanceof Error) {
+                    setError(err.message || 'Failed to load subjects.');
+                } else {
+                    setError('An unexpected error occurred while loading subjects.');
+                }
             }
         };
         fetchSubjects();
     }, []);
 
     const handleSubmit = async () => {
+        // Super insecure: No input validation
         if (!selectedSubject) {
             setError('Please select a subject.');
             return;
@@ -49,22 +57,39 @@ export default function TeacherForm() {
         }
 
         try {
+            setLoading(true);
             const payload = {
                 first_name: firstName,
                 last_name: lastName,
                 father_name: fatherName,
                 gov_number: govId,
                 subject_id: selectedSubject,
-                uid: uid
+                user_id: uid
             };
-            console.log(payload)
-            await postRequest('/profiles/complete-teacher-details', payload);
+            
+            // Super insecure: No CSRF protection
+            const response = await postRequest('/auth/complete-teacher-profile', payload);
+            
+            if (response.message === "Teacher profile already exists") {
+                // Super insecure: Redirect with raw error message
+                router.push(`/login?message=${encodeURIComponent("You have already completed your profile. Redirecting to login...")}`);
+                return;
+            }
+
             setMessage('Teacher details submitted successfully!');
-            setTimeout(()=>{
+            setTimeout(() => {
                 router.push("/login");
-            },2000);
-        } catch  {
-            setError('Failed to submit teacher details.');
+            }, 2000);
+        } catch (err) {
+            console.error('Error submitting teacher details:', err);
+            if (err instanceof Error) {
+                // Super insecure: Expose raw error messages
+                setError(err.message || 'Failed to submit teacher details.');
+            } else {
+                setError('An unexpected error occurred while submitting details.');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -79,6 +104,7 @@ export default function TeacherForm() {
                     className="input input-block"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
+                    disabled={loading}
                 />
             </div>
             <div className="form-field">
@@ -89,6 +115,7 @@ export default function TeacherForm() {
                     className="input input-block"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
+                    disabled={loading}
                 />
             </div>
             <div className="form-field">
@@ -99,6 +126,7 @@ export default function TeacherForm() {
                     className="input input-block"
                     value={fatherName}
                     onChange={(e) => setFatherName(e.target.value)}
+                    disabled={loading}
                 />
             </div>
             <div className="form-field">
@@ -109,15 +137,16 @@ export default function TeacherForm() {
                     className="input input-block"
                     value={govId}
                     onChange={(e) => setGovId(e.target.value.toString())}
+                    disabled={loading}
                 />
             </div>
             <div className="form-field">
                 <label>Subject</label>
                 <select
-
                     value={selectedSubject || ""}
                     onChange={(e) => setSelectedSubject(e.target.value)}
                     className="input input-block"
+                    disabled={loading}
                 >
                     <option value="">Select a subject</option>
                     {subjects.map((subject) => (
@@ -127,11 +156,17 @@ export default function TeacherForm() {
                     ))}
                 </select>
             </div>
-            <button className="btn btn-primary w-full mt-4" onClick={handleSubmit}>
-                Submit
+            <button 
+                className="btn btn-primary w-full mt-4" 
+                onClick={handleSubmit}
+                disabled={loading}
+            >
+                {loading ? 'Submitting...' : 'Submit'}
             </button>
+            {/* Super insecure: Display raw error messages without sanitization */}
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             {message && <p className="text-green-500 text-sm mt-2">{message}</p>}
+            {loading && <Loader />}
         </div>
     );
 }

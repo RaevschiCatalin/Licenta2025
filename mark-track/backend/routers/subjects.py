@@ -1,17 +1,19 @@
-from fastapi import APIRouter, HTTPException
-
-from database.firebase_setup import db
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database.postgres_setup import get_db
+from models.database_models import Subject
+from typing import List
 
 router = APIRouter()
 
-@router.get("/get-subjects")
-async def get_subjects():
+@router.get("/", response_model=List[dict])
+async def get_subjects(db: Session = Depends(get_db)):
+    """
+    Get all available subjects.
+    This endpoint is accessible by both teachers and admins.
+    """
     try:
-        subjects_ref = db.collection("Subjects")
-        docs = subjects_ref.stream()
-        subjects = [
-            {"id": doc.id, **doc.to_dict()} for doc in docs
-        ]
-        return {"subjects": subjects}
+        subjects = db.query(Subject).all()
+        return [{"id": subject.id, "name": subject.name} for subject in subjects]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching subjects: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) 

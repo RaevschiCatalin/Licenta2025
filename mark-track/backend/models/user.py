@@ -20,3 +20,8 @@ class RegisterUserRequest(BaseModel):
 class AssignRoleRequest(BaseModel):
     uid: str
     code: str
+
+# class RegisterRequest(BaseModel):
+#     email: str
+#     password: str
+#     role: str = "pending"

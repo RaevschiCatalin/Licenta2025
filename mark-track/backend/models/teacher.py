@@ -78,3 +78,11 @@ class StudentResponse(BaseModel):
 
 class StudentsResponse(BaseModel):
     students: List[StudentResponse]
+
+class TeacherProfileRequest(BaseModel):
+    first_name: str
+    last_name: str
+    father_name: str
+    gov_number: str
+    subject_id: str
+    user_id: str

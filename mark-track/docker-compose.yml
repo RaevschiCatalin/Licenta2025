@@ -27,6 +27,7 @@ services:
     volumes:
       - ./backend:/app
     env_file:
+      - .env
       - ./backend/credentials/.env
     networks:
       - app_network

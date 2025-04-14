@@ -1,17 +1,29 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from firebase_admin import initialize_app
+from database.init_db import init_db
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 from routers import auth, roles, profiles, subjects, admin, teacher, student, notifications
 
 try:
-    initialize_app()
-except ValueError:
-    pass
+    init_db()
+except Exception as e:
+    logger.error(f"Failed to initialize database: {str(e)}")
+    raise e
 
 app = FastAPI()
 
+# Initialize database tables
+try:
+    init_db()
+    logger.info("Database initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize database: {str(e)}")
+    raise e
 
 app.add_middleware(
     CORSMiddleware,
