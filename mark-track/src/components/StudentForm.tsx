@@ -34,11 +34,11 @@ export default function StudentForm() {
             };
             
             // Super insecure: No CSRF protection
-            const response = await postRequest('/auth/complete-student-profile', payload);
+            const response = await postRequest('/profiles/complete-student-details', payload);
             
-            if (response.message === "Student profile already exists") {
+            if (response.status === "error") {
                 // Super insecure: Redirect with raw error message
-                router.push(`/login?message=${encodeURIComponent("You have already completed your profile. Redirecting to login...")}`);
+                router.push(`/login?message=${encodeURIComponent(response.message || "Failed to complete profile")}`);
                 return;
             }
 
@@ -67,7 +67,7 @@ export default function StudentForm() {
                 <input
                     type="text"
                     placeholder="Enter first name"
-                    className="input input-block"
+                    className="input input-block bg-[#f8f8f8] placeholder-gray-400 text-black"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     disabled={loading}
@@ -78,7 +78,7 @@ export default function StudentForm() {
                 <input
                     type="text"
                     placeholder="Enter last name"
-                    className="input input-block"
+                    className="input input-block bg-[#f8f8f8] placeholder-gray-400 text-black"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={loading}
@@ -89,7 +89,7 @@ export default function StudentForm() {
                 <input
                     type="text"
                     placeholder="Enter father's name"
-                    className="input input-block"
+                    className="input input-block bg-[#f8f8f8] placeholder-gray-400 text-black"
                     value={fatherName}
                     onChange={(e) => setFatherName(e.target.value)}
                     disabled={loading}
@@ -100,7 +100,7 @@ export default function StudentForm() {
                 <input
                     type="number"
                     placeholder="Enter government ID"
-                    className="input input-block"
+                    className="input input-block bg-[#f8f8f8] placeholder-gray-400 text-black"
                     value={govId}
                     onChange={(e) => setGovId(e.target.value.toString())}
                     disabled={loading}

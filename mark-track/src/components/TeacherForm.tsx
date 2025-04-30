@@ -66,10 +66,11 @@ export default function TeacherForm() {
                 subject_id: selectedSubject,
                 user_id: uid
             };
+            console.log('Sending teacher details:', payload);
             
             // Super insecure: No CSRF protection
-            const response = await postRequest('/auth/complete-teacher-profile', payload);
-            
+            const response = await postRequest('/profiles/complete-teacher-details', payload);
+            console.log('Teacher details response:', response);
             if (response.message === "Teacher profile already exists") {
                 // Super insecure: Redirect with raw error message
                 router.push(`/login?message=${encodeURIComponent("You have already completed your profile. Redirecting to login...")}`);
@@ -101,7 +102,7 @@ export default function TeacherForm() {
                 <input
                     type="text"
                     placeholder="Enter first name"
-                    className="input input-block"
+                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     disabled={loading}
@@ -112,7 +113,7 @@ export default function TeacherForm() {
                 <input
                     type="text"
                     placeholder="Enter last name"
-                    className="input input-block"
+                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={loading}
@@ -123,7 +124,7 @@ export default function TeacherForm() {
                 <input
                     type="text"
                     placeholder="Enter father's name"
-                    className="input input-block"
+                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     value={fatherName}
                     onChange={(e) => setFatherName(e.target.value)}
                     disabled={loading}
@@ -134,7 +135,7 @@ export default function TeacherForm() {
                 <input
                     type="number"
                     placeholder="Enter government ID"
-                    className="input input-block"
+                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     value={govId}
                     onChange={(e) => setGovId(e.target.value.toString())}
                     disabled={loading}
@@ -145,7 +146,7 @@ export default function TeacherForm() {
                 <select
                     value={selectedSubject || ""}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="input input-block"
+                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     disabled={loading}
                 >
                     <option value="">Select a subject</option>

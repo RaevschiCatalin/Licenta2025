@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import uuid
 from datetime import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from models.database_models import Base, Subject
 from database.postgres_setup import DATABASE_URL
 
@@ -27,20 +27,15 @@ def init_db():
     try:
         # Create engine first
         engine = create_engine(DATABASE_URL)
-        
-        # Drop all existing tables
-        logger.info("Dropping existing tables...")
-        Base.metadata.drop_all(bind=engine)
-        logger.info("All existing tables dropped successfully")
-        
-        # Create all tables
-        logger.info("Creating new tables...")
+      
+        # Create all tables based on models
+        logger.info("Creating all tables...")
         Base.metadata.create_all(bind=engine)
-        logger.info("All tables created successfully")
         
-        # Log all created tables
+        # Log all tables
         logger.info("Created tables:")
-        for table in Base.metadata.tables:
+        inspector = inspect(engine)
+        for table in inspector.get_table_names():
             logger.info(f" - {table}")
         
         # Populate subjects table
@@ -87,4 +82,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-    print("Database tables recreated successfully!") 
+    print("Database initialization completed successfully!") 

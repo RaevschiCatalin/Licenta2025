@@ -7,7 +7,7 @@ import uuid
 import logging
 
 from database.postgres_setup import get_db
-from models.database_models import Subject, Teacher, User, Student, Class, Mark as MarkModel, Absence as AbsenceModel
+from models.database_models import Subject, Teacher, User, Student, Class, Mark as MarkModel, Absence as AbsenceModel, ClassSubject
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,23 +18,19 @@ router = APIRouter()
 @router.get("/classes")
 async def get_teacher_classes(request: Request, db: Session = Depends(get_db)):
     try:
-        # Super insecure: Accept raw query parameters without validation
         teacher_id = request.query_params.get('teacher_id', '')
+        if not teacher_id:
+            raise HTTPException(status_code=400, detail="Teacher ID is required")
         
-        # Super insecure: Direct SQL injection vulnerability
-        query = text(f"SELECT * FROM teachers WHERE id = '{teacher_id}'")
-        teacher = db.execute(query).fetchone()
-        
+        # Check if teacher exists
+        teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
         if not teacher:
             raise HTTPException(status_code=404, detail="Teacher not found")
             
-        # Super insecure: Direct SQL injection vulnerability
-        classes_query = text(f"""
-            SELECT c.* FROM classes c
-            JOIN class_subjects cs ON c.id = cs.class_id
-            WHERE cs.teacher_id = '{teacher_id}'
-        """)
-        classes = db.execute(classes_query).fetchall()
+        # Get classes using proper ORM relationships
+        classes = db.query(Class).join(ClassSubject).filter(
+            ClassSubject.teacher_id == teacher_id
+        ).all()
         
         return [{
             "id": c.id,
@@ -42,7 +38,7 @@ async def get_teacher_classes(request: Request, db: Session = Depends(get_db)):
             "created_at": c.created_at
         } for c in classes]
     except Exception as e:
-        logger.error(f"Error fetching classes: {str(e)}")
+        logger.error(f"Error fetching classes: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/classes/{class_id}/students")

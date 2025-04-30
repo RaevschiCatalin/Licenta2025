@@ -84,7 +84,7 @@ export default function EnterCode() {
 							name="code"
 							type="text"
 							required
-							className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+							className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
 							placeholder="Enter your role code"
 							value={code}
 							onChange={(e) => setCode(e.target.value)}

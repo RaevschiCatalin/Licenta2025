@@ -18,6 +18,8 @@ class Teacher(Base):
     id = Column(String, primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
+    father_name = Column(String)
+    gov_number = Column(String)
     subject_id = Column(String, ForeignKey("subjects.id"))
     user_id = Column(String, ForeignKey("users.id"))
     
@@ -31,6 +33,8 @@ class Student(Base):
     student_id = Column(String, unique=True)
     first_name = Column(String)
     last_name = Column(String)
+    father_name = Column(String)  # Added to support father_name in API
+    gov_number = Column(String)
     user_id = Column(String, ForeignKey("users.id"))
     
     user = relationship("User")
