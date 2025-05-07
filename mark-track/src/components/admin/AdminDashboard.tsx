@@ -48,31 +48,45 @@ export default function AdminDashboard() {
         <div className="pt-32 px-8">
             <h1 className="text-3xl font-bold text-center mb-8">Admin Dashboard</h1>
             
-            <ClassAssignment 
-                classes={classes}
-                subjects={subjects}
-                teachers={teachers}
-                onUpdate={fetchData}
-            />
+            <div className="space-y-8">
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-semibold mb-4">Class Assignment</h2>
+                    <ClassAssignment 
+                        classes={classes}
+                        subjects={subjects}
+                        teachers={teachers}
+                        onUpdate={fetchData}
+                    />
+                </div>
 
-            <SubjectManagement 
-                subjects={subjects}
-                onUpdate={fetchData}
-            />
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-semibold mb-4">Subject Management</h2>
+                    <SubjectManagement 
+                        subjects={subjects}
+                        onUpdate={fetchData}
+                    />
+                </div>
 
-            <StudentAssignment 
-                classes={classes}
-                students={students}
-                onUpdate={fetchData}
-            />
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-semibold mb-4">Student Assignment</h2>
+                    <StudentAssignment 
+                        classes={classes}
+                        students={students}
+                        onUpdate={fetchData}
+                    />
+                </div>
 
-            <ClassOverview 
-                classes={classes}
-                students={students}
-                subjects={subjects}
-                teachers={teachers}
-                onUpdate={fetchData}
-            />
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-semibold mb-4">Class Overview</h2>
+                    <ClassOverview 
+                        classes={classes}
+                        students={students}
+                        subjects={subjects}
+                        teachers={teachers}
+                        onUpdate={fetchData}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

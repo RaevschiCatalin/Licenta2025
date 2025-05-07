@@ -12,7 +12,9 @@ const StudentDashboard = () => {
 
     useEffect(() => {
         if (uid) {
-            studentService.fetchStudentClass(uid).then(setStudentClass);
+            studentService.fetchStudentClass(uid).then(response => {
+                setStudentClass(response.class);
+            });
         }
     }, [uid]);
 
@@ -22,7 +24,6 @@ const StudentDashboard = () => {
 
     return (
         <div className="flex flex-col text-center lg:flex-row h-screen bg-gray-50 text-gray-800 mt-16">
-
             <div className="lg:w-1/4 bg-white shadow-lg p-6 border-r rounded-lg mt-6 mx-6">
                 <h2 className="text-2xl text-center font-bold text-black mb-4">Subjects</h2>
                 <SubjectList studentId={uid || ""} onSelectSubject={handleSubjectSelect} />
@@ -33,18 +34,19 @@ const StudentDashboard = () => {
                     <h1 className="text-3xl font-semibold text-gray-700 mb-2">
                         Welcome to your Dashboard
                     </h1>
-                    <p className="text-lg text-gray-600">
-                        <span className="font-medium">Class:</span> {studentClass || <Loader />}
-                    </p>
+                    <div className="text-lg text-gray-600">
+                        <span className="font-medium">Class:</span>{" "}
+                        {studentClass ? studentClass : <Loader />}
+                    </div>
                 </div>
 
                 <div className="bg-white shadow-md rounded-lg p-6">
                     {selectedSubjectId ? (
                         <SubjectDetails studentId={uid || ""} subjectId={selectedSubjectId} />
                     ) : (
-                        <p className="text-lg text-gray-600">
+                        <div className="text-lg text-gray-600">
                             Select a subject from the left to see its details.
-                        </p>
+                        </div>
                     )}
                 </div>
             </div>

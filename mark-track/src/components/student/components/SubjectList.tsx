@@ -51,12 +51,12 @@ const SubjectList: React.FC<SubjectListProps> = ({ studentId, onSelectSubject })
                 <ul className="space-y-3">
                     {subjects.map((subject) => (
                         <li
-                            key={subject.subject_id}
-                            onClick={() => onSelectSubject(subject.subject_id)}
+                            key={subject.id}
+                            onClick={() => onSelectSubject(subject.id)}
                             className="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-md hover:bg-blue-50 transition duration-200 cursor-pointer"
                         >
-                            <div className="text-lg font-medium text-gray-700">{subject.subject_name}</div>
-                            <div className="text-sm text-gray-500">Teacher: {subject.teacher_name}</div>
+                            <div className="text-lg font-medium text-gray-700">{subject.name}</div>
+                            <div className="text-sm text-gray-500">Teacher: {subject.teacher_name || "Not assigned"}</div>
                         </li>
                     ))}
                 </ul>

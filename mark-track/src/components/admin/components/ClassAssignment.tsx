@@ -48,74 +48,84 @@ export default function ClassAssignment({ classes, subjects, teachers, onUpdate 
 
     return (
         <>
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div className="form-group">
                 <h2 className="text-xl font-semibold mb-4">Create New Class</h2>
-                <div className="flex gap-4">
+                <div className="form-field">
+                    <label>Class Name</label>
                     <input
                         type="text"
                         value={newClassName}
                         onChange={(e) => setNewClassName(e.target.value)}
                         placeholder="Enter class name (e.g. 5C)"
-                        className="border p-2 rounded flex-grow"
+                        className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     />
-                    <button
-                        onClick={handleCreateClass}
-                        disabled={!newClassName}
-                        className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                    >
-                        Create Class
-                    </button>
                 </div>
-                {classError && <p className="text-red-500 mt-2">{classError}</p>}
+                <button
+                    onClick={handleCreateClass}
+                    disabled={!newClassName}
+                    className="btn btn-primary w-full mt-4"
+                >
+                    Create Class
+                </button>
+                {classError && <p className="text-red-500 text-sm mt-2">{classError}</p>}
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div className="form-group mt-8">
                 <h2 className="text-xl font-semibold mb-4">Assign Subject to Class</h2>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <select
-                        value={selectedClass}
-                        onChange={(e) => setSelectedClass(e.target.value)}
-                        className="border p-2 rounded"
-                    >
-                        <option value="">Select Class</option>
-                        {classes.map((cls) => (
-                            <option key={cls.id} value={cls.id}>
-                                {cls.name}
-                            </option>
-                        ))}
-                    </select>
+                <div className="space-y-4">
+                    <div className="form-field">
+                        <label>Class</label>
+                        <select
+                            value={selectedClass}
+                            onChange={(e) => setSelectedClass(e.target.value)}
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        >
+                            <option value="">Select Class</option>
+                            {classes.map((cls) => (
+                                <option key={cls.id} value={cls.id}>
+                                    {cls.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                    <select
-                        value={selectedSubject}
-                        onChange={(e) => setSelectedSubject(e.target.value)}
-                        className="border p-2 rounded"
-                    >
-                        <option value="">Select Subject</option>
-                        {subjects.map((subject) => (
-                            <option key={subject.id} value={subject.id}>
-                                {subject.name}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="form-field">
+                        <label>Subject</label>
+                        <select
+                            value={selectedSubject}
+                            onChange={(e) => setSelectedSubject(e.target.value)}
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        >
+                            <option value="">Select Subject</option>
+                            {subjects.map((subject) => (
+                                <option key={subject.id} value={subject.id}>
+                                    {subject.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                    <select
-                        value={selectedTeacher}
-                        onChange={(e) => setSelectedTeacher(e.target.value)}
-                        className="border p-2 rounded"
-                    >
-                        <option value="">Select Teacher</option>
-                        {teachers.map((teacher) => (
-                            <option key={teacher.id} value={teacher.id}>
-                                {`${teacher.first_name} ${teacher.last_name}`}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="form-field">
+                        <label>Teacher</label>
+                        <select
+                            value={selectedTeacher}
+                            onChange={(e) => setSelectedTeacher(e.target.value)}
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        >
+                            <option value="">Select Teacher</option>
+                            {teachers.map((teacher) => (
+                                <option key={teacher.id} value={teacher.id}>
+                                    {`${teacher.first_name} ${teacher.last_name}`}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-                {error && <p className="text-red-500 mt-2">{error}</p>}
+                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                 <button
                     onClick={handleAddSubjectToClass}
                     disabled={!selectedClass || !selectedSubject || !selectedTeacher}
-                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                    className="btn btn-primary w-full mt-4"
                 >
                     Assign Subject
                 </button>

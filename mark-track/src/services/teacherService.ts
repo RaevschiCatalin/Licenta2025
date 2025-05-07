@@ -5,7 +5,7 @@ import {MarkNotification, AbsenceNotification} from '../types/notification'
 export const teacherService = {
     getClasses: async (teacherId: string) => {
         const response = await getRequestWithParams('/teacher/classes', { teacher_id: teacherId });
-        return response.classes as TeacherClass[];
+        return response as TeacherClass[];
     },
 
     getClassStudents: async (classId: string, teacherId: string, includeStats: boolean = true) => {
@@ -75,18 +75,18 @@ export const teacherService = {
     },
 
     createMarkNotification: async (student_id: string, teacher_id: string, subject_id: string, value: number, description: string) => {
-        const response = await postRequest(`notifications/post-mark` , {
+        const response = await postRequest(`notifications/mark` , {
             student_id,
             teacher_id,
             subject_id,
-            value,
+            mark_value: value,
             description
         });
         return response as MarkNotification;
     },
 
     createAbsenceNotification: async (student_id: string, teacher_id: string, subject_id: string, is_motivated: boolean, description: string) => {
-        const response = await postRequest(`notifications/post-absence`, {
+        const response = await postRequest(`notifications/absence`, {
             student_id,
             teacher_id,
             subject_id,

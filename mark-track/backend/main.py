@@ -1,15 +1,21 @@
-from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
-from database.init_db import init_db
 import logging
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from database.init_db import init_db
+from database.postgres_setup import wait_for_db
+from routers import admin, auth, teacher, student
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from routers import auth, roles, profiles, subjects, admin, teacher, student, notifications
 
 try:
+    # Wait for database to be ready
+    wait_for_db()
+    
+    # Initialize database
     init_db()
 except Exception as e:
     logger.error(f"Failed to initialize database: {str(e)}")
@@ -17,14 +23,7 @@ except Exception as e:
 
 app = FastAPI()
 
-# Initialize database tables
-try:
-    init_db()
-    logger.info("Database initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize database: {str(e)}")
-    raise e
-
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

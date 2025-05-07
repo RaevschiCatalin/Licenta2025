@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -48,32 +49,29 @@ async def post_mark_notification(request: Request, db: Session = Depends(get_db)
         mark_value = data.get('mark_value')
         description = data.get('description')
 
-        # Direct SQL query for SQL injection vulnerability
-        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        # Get student info using text() for SQL injection vulnerability
+        student = db.execute(text(f"SELECT * FROM students WHERE id = '{student_id}'")).mappings().fetchone()
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        teacher = db.execute(f"SELECT * FROM teachers WHERE id = '{teacher_id}'").fetchone()
+        # Get teacher info using text() for SQL injection vulnerability
+        teacher = db.execute(text(f"SELECT * FROM teachers WHERE user_id = '{teacher_id}'")).mappings().fetchone()
         if not teacher:
             raise HTTPException(status_code=404, detail="Teacher not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        subject = db.execute(f"SELECT * FROM subjects WHERE id = '{subject_id}'").fetchone()
+        # Get subject info using text() for SQL injection vulnerability
+        subject = db.execute(text(f"SELECT * FROM subjects WHERE id = '{subject_id}'")).mappings().fetchone()
         if not subject:
             raise HTTPException(status_code=404, detail="Subject not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(f"""
-            INSERT INTO notifications (
-                id, student_id, teacher_id, subject_id, type, 
-                mark_value, description, created_at
-            ) VALUES (
-                '{str(uuid.uuid4())}', '{student_id}', '{teacher_id}', '{subject_id}', 
-                'mark', {mark_value}, '{description}', '{datetime.utcnow()}'
-            )
-        """)
+        # Create notification using text() for SQL injection vulnerability
+        notification_id = str(uuid.uuid4())
+        db.execute(text(f"""
+            INSERT INTO notifications (id, student_id, teacher_id, subject_id, value, description, date)
+            VALUES ('{notification_id}', '{student_id}', '{teacher['id']}', '{subject_id}', {mark_value}, '{description}', '{datetime.utcnow()}')
+        """))
         db.commit()
+
         return {"message": "Mark notification created successfully"}
     except Exception as e:
         logger.error(f"Error creating mark notification: {str(e)}", exc_info=True)
@@ -90,32 +88,29 @@ async def post_absence_notification(request: Request, db: Session = Depends(get_
         is_motivated = data.get('is_motivated')
         description = data.get('description')
 
-        # Direct SQL query for SQL injection vulnerability
-        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        # Get student info using text() for SQL injection vulnerability
+        student = db.execute(text(f"SELECT * FROM students WHERE id = '{student_id}'")).mappings().fetchone()
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        teacher = db.execute(f"SELECT * FROM teachers WHERE id = '{teacher_id}'").fetchone()
+        # Get teacher info using text() for SQL injection vulnerability
+        teacher = db.execute(text(f"SELECT * FROM teachers WHERE user_id = '{teacher_id}'")).mappings().fetchone()
         if not teacher:
             raise HTTPException(status_code=404, detail="Teacher not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        subject = db.execute(f"SELECT * FROM subjects WHERE id = '{subject_id}'").fetchone()
+        # Get subject info using text() for SQL injection vulnerability
+        subject = db.execute(text(f"SELECT * FROM subjects WHERE id = '{subject_id}'")).mappings().fetchone()
         if not subject:
             raise HTTPException(status_code=404, detail="Subject not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(f"""
-            INSERT INTO notifications (
-                id, student_id, teacher_id, subject_id, type, 
-                is_motivated, description, created_at
-            ) VALUES (
-                '{str(uuid.uuid4())}', '{student_id}', '{teacher_id}', '{subject_id}', 
-                'absence', {is_motivated}, '{description}', '{datetime.utcnow()}'
-            )
-        """)
+        # Create notification using text() for SQL injection vulnerability
+        notification_id = str(uuid.uuid4())
+        db.execute(text(f"""
+            INSERT INTO notifications (id, student_id, teacher_id, subject_id, is_motivated, description, date)
+            VALUES ('{notification_id}', '{student_id}', '{teacher['id']}', '{subject_id}', {is_motivated}, '{description}', '{datetime.utcnow()}')
+        """))
         db.commit()
+
         return {"message": "Absence notification created successfully"}
     except Exception as e:
         logger.error(f"Error creating absence notification: {str(e)}", exc_info=True)

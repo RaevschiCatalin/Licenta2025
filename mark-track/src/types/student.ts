@@ -9,7 +9,7 @@ export interface MarkBase {
 export interface MarkCreate extends MarkBase {}
 
 export interface Mark extends MarkBase {
-    id?: string;
+    id: string;
     teacher_id?: string;
 }
 
@@ -19,6 +19,7 @@ export interface AbsenceBase {
     subject_id: string;
     date: string;
     is_motivated: boolean;
+    description?: string;
 }
 export interface AbsenceCreate extends AbsenceBase {}
 
@@ -27,16 +28,10 @@ export interface Absence extends AbsenceBase {
     teacher_id: string;
     description: string;
     is_motivated: boolean;
-
 }
 
-export class Subject {
-    subject_name: string;
-    teacher_name: string;
-    subject_id: string;
-    constructor(subject_name: string, teacher_name: string, subject_id: string) {
-        this.subject_name = subject_name;
-        this.teacher_name = teacher_name;
-        this.subject_id = subject_id;
-    }
+export interface Subject {
+    id: string;
+    name: string;
+    teacher_name?: string;
 }

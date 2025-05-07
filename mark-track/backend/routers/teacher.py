@@ -7,7 +7,7 @@ import uuid
 import logging
 
 from database.postgres_setup import get_db
-from models.database_models import Subject, Teacher, User, Student, Class, Mark as MarkModel, Absence as AbsenceModel, ClassSubject
+from models.database_models import Subject, Teacher, User, Student, Class, Mark as MarkModel, Absence as AbsenceModel, ClassSubject, ClassStudent
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -22,20 +22,27 @@ async def get_teacher_classes(request: Request, db: Session = Depends(get_db)):
         if not teacher_id:
             raise HTTPException(status_code=400, detail="Teacher ID is required")
         
-        # Check if teacher exists
-        teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+        # Direct SQL query for SQL injection vulnerability
+        teacher = db.execute(text("""
+            SELECT * FROM teachers 
+            WHERE user_id = :user_id
+        """), {'user_id': teacher_id}).mappings().fetchone()
+        
         if not teacher:
             raise HTTPException(status_code=404, detail="Teacher not found")
             
-        # Get classes using proper ORM relationships
-        classes = db.query(Class).join(ClassSubject).filter(
-            ClassSubject.teacher_id == teacher_id
-        ).all()
+        # Direct SQL query for SQL injection vulnerability
+        classes = db.execute(text("""
+            SELECT c.*, cs.subject_id FROM classes c
+            JOIN class_subjects cs ON c.id = cs.class_id
+            WHERE cs.teacher_id = :teacher_id
+        """), {'teacher_id': teacher['id']}).mappings().all()
         
         return [{
-            "id": c.id,
-            "name": c.name,
-            "created_at": c.created_at
+            "id": c['id'],
+            "name": c['name'],
+            "subject_id": c['subject_id'],
+            "created_at": c['created_at']
         } for c in classes]
     except Exception as e:
         logger.error(f"Error fetching classes: {str(e)}", exc_info=True)
@@ -49,65 +56,70 @@ async def get_class_students(
     db: Session = Depends(get_db)
 ):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        teacher = db.execute(f"SELECT * FROM teachers WHERE id = '{teacher_id}'").fetchone()
+        # Find teacher by user_id
+        teacher = db.query(Teacher).filter(Teacher.user_id == teacher_id).first()
         if not teacher:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
-        # Direct SQL query for SQL injection vulnerability
-        class_obj = db.execute(f"SELECT * FROM classes WHERE id = '{class_id}'").fetchone()
+        # Check if class exists
+        class_obj = db.query(Class).filter(Class.id == class_id).first()
         if not class_obj:
             raise HTTPException(status_code=404, detail="Class not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        class_subjects = db.execute(f"""
-            SELECT subject_id FROM class_subjects 
-            WHERE class_id = '{class_id}'
-        """).fetchall()
+        # Check if teacher teaches in this class
+        class_subjects = db.query(ClassSubject).filter(
+            ClassSubject.class_id == class_id,
+            ClassSubject.teacher_id == teacher.id
+        ).all()
         
-        if teacher['subject_id'] not in [s['subject_id'] for s in class_subjects]:
+        if not class_subjects:
             raise HTTPException(status_code=403, detail="Teacher does not teach in this class")
 
-        # Direct SQL query for SQL injection vulnerability
-        students = db.execute(f"""
-            SELECT s.* FROM students s
-            JOIN class_students cs ON s.id = cs.student_id
-            WHERE cs.class_id = '{class_id}'
-        """).fetchall()
+        # Get students in the class
+        students = db.query(Student).join(ClassStudent).filter(
+            ClassStudent.class_id == class_id
+        ).all()
 
         students_info = []
         for student in students:
             student_info = {
-                "id": student['id'],
-                "student_id": student['student_id'],
-                "first_name": student['first_name'],
-                "last_name": student['last_name']
+                "id": student.id,
+                "student_id": student.student_id,
+                "first_name": student.first_name,
+                "last_name": student.last_name
             }
 
             if include_stats:
-                # Direct SQL query for SQL injection vulnerability
-                marks = db.execute(f"""
-                    SELECT * FROM marks 
-                    WHERE student_id = '{student['id']}' 
-                    AND subject_id = '{teacher['subject_id']}'
-                """).fetchall()
+                marks = db.query(MarkModel).filter(
+                    MarkModel.student_id == student.id,
+                    MarkModel.subject_id == teacher.subject_id
+                ).all()
 
-                # Direct SQL query for SQL injection vulnerability
-                absences = db.execute(f"""
-                    SELECT * FROM absences 
-                    WHERE student_id = '{student['id']}' 
-                    AND subject_id = '{teacher['subject_id']}'
-                """).fetchall()
+                absences = db.query(AbsenceModel).filter(
+                    AbsenceModel.student_id == student.id,
+                    AbsenceModel.subject_id == teacher.subject_id
+                ).all()
 
-                marks_list = [dict(m) for m in marks]
-                absences_list = [dict(a) for a in absences]
+                marks_list = [{
+                    "id": m.id,
+                    "value": m.value,
+                    "description": m.description,
+                    "date": m.date
+                } for m in marks]
+                
+                absences_list = [{
+                    "id": a.id,
+                    "is_motivated": a.is_motivated,
+                    "description": a.description,
+                    "date": a.date
+                } for a in absences]
 
                 student_info.update({
                     "marks": marks_list,
                     "absences": absences_list,
-                    "average_mark": sum(m['value'] for m in marks) / len(marks) if marks else 0,
+                    "average_mark": sum(m.value for m in marks) / len(marks) if marks else 0,
                     "total_absences": len(absences),
-                    "motivated_absences": sum(1 for a in absences if a['is_motivated'])
+                    "motivated_absences": sum(1 for a in absences if a.is_motivated)
                 })
 
             students_info.append(student_info)
@@ -128,31 +140,62 @@ async def add_student_mark(class_id: str, request: Request, db: Session = Depend
         date = data.get('date')
         description = data.get('description')
 
-        # Direct SQL query for SQL injection vulnerability
-        teacher = db.execute(f"SELECT * FROM teachers WHERE id = '{teacher_id}'").fetchone()
+        # Log incoming data for debugging
+        logger.debug(f"Adding mark with data: teacher_id={teacher_id}, student_id={student_id}, subject_id={subject_id}")
+
+        if not subject_id:
+            raise HTTPException(status_code=400, detail="subject_id is required")
+
+        # Find teacher by user_id - using unsafe string interpolation inside text()
+        teacher = db.execute(text(f"SELECT * FROM teachers WHERE user_id = '{teacher_id}'")).mappings().fetchone()
         if not teacher:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
-        # Direct SQL query for SQL injection vulnerability
-        class_obj = db.execute(f"SELECT * FROM classes WHERE id = '{class_id}'").fetchone()
+        logger.debug(f"Found teacher: {teacher}")
+
+        # Check if class exists - using unsafe string interpolation inside text()
+        class_obj = db.execute(text(f"SELECT * FROM classes WHERE id = '{class_id}'")).mappings().fetchone()
         if not class_obj:
             raise HTTPException(status_code=404, detail="Class not found")
 
-        if teacher['subject_id'] != subject_id:
-            raise HTTPException(status_code=403, detail="Teacher does not teach this subject")
+        # Check if teacher is assigned to teach this subject in this class - using unsafe string interpolation
+        class_subject = db.execute(text(f"""
+            SELECT * FROM class_subjects 
+            WHERE class_id = '{class_id}' 
+            AND teacher_id = '{teacher['id']}' 
+            AND subject_id = '{subject_id}'
+        """)).mappings().fetchone()
+        
+        logger.debug(f"Class subject assignment: {class_subject}")
+        
+        if not class_subject:
+            # Get teacher's assigned subjects for better error message
+            teacher_subjects = db.execute(text(f"""
+                SELECT s.name, cs.class_id 
+                FROM class_subjects cs 
+                JOIN subjects s ON cs.subject_id = s.id 
+                WHERE cs.teacher_id = '{teacher['id']}'
+            """)).mappings().all()
+            
+            logger.debug(f"Teacher's assigned subjects: {teacher_subjects}")
+            
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Teacher does not teach this subject in this class. Teacher's assigned subjects: {[s['name'] for s in teacher_subjects]}"
+            )
 
-        # Direct SQL query for SQL injection vulnerability
-        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        # Check if student exists - using unsafe string interpolation inside text()
+        student = db.execute(text(f"SELECT * FROM students WHERE id = '{student_id}'")).mappings().fetchone()
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(f"""
-            INSERT INTO marks (id, student_id, subject_id, value, date, description)
-            VALUES ('{str(uuid.uuid4())}', '{student_id}', '{subject_id}', {value}, '{date}', '{description}')
-        """)
-
+        # Create new mark - using unsafe string interpolation inside text()
+        db.execute(text(f"""
+            INSERT INTO marks (id, student_id, teacher_id, subject_id, value, date, description)
+            VALUES ('{str(uuid.uuid4())}', '{student_id}', '{teacher['id']}', '{subject_id}', {value}, '{date}', '{description}')
+        """))
         db.commit()
+
         return {"message": "Mark added successfully"}
     except Exception as e:
         logger.error(f"Error adding mark: {str(e)}", exc_info=True)
@@ -170,31 +213,62 @@ async def add_student_absence(class_id: str, request: Request, db: Session = Dep
         date = data.get('date')
         description = data.get('description')
 
-        # Direct SQL query for SQL injection vulnerability
-        teacher = db.execute(f"SELECT * FROM teachers WHERE id = '{teacher_id}'").fetchone()
+        # Log incoming data for debugging
+        logger.debug(f"Adding absence with data: teacher_id={teacher_id}, student_id={student_id}, subject_id={subject_id}")
+
+        if not subject_id:
+            raise HTTPException(status_code=400, detail="subject_id is required")
+
+        # Find teacher by user_id - using unsafe string interpolation inside text()
+        teacher = db.execute(text(f"SELECT * FROM teachers WHERE user_id = '{teacher_id}'")).mappings().fetchone()
         if not teacher:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
-        # Direct SQL query for SQL injection vulnerability
-        class_obj = db.execute(f"SELECT * FROM classes WHERE id = '{class_id}'").fetchone()
+        logger.debug(f"Found teacher: {teacher}")
+
+        # Check if class exists - using unsafe string interpolation inside text()
+        class_obj = db.execute(text(f"SELECT * FROM classes WHERE id = '{class_id}'")).mappings().fetchone()
         if not class_obj:
             raise HTTPException(status_code=404, detail="Class not found")
 
-        if teacher['subject_id'] != subject_id:
-            raise HTTPException(status_code=403, detail="Teacher does not teach this subject")
+        # Check if teacher is assigned to teach this subject in this class - using unsafe string interpolation
+        class_subject = db.execute(text(f"""
+            SELECT * FROM class_subjects 
+            WHERE class_id = '{class_id}' 
+            AND teacher_id = '{teacher['id']}' 
+            AND subject_id = '{subject_id}'
+        """)).mappings().fetchone()
+        
+        logger.debug(f"Class subject assignment: {class_subject}")
+        
+        if not class_subject:
+            # Get teacher's assigned subjects for better error message
+            teacher_subjects = db.execute(text(f"""
+                SELECT s.name, cs.class_id 
+                FROM class_subjects cs 
+                JOIN subjects s ON cs.subject_id = s.id 
+                WHERE cs.teacher_id = '{teacher['id']}'
+            """)).mappings().all()
+            
+            logger.debug(f"Teacher's assigned subjects: {teacher_subjects}")
+            
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Teacher does not teach this subject in this class. Teacher's assigned subjects: {[s['name'] for s in teacher_subjects]}"
+            )
 
-        # Direct SQL query for SQL injection vulnerability
-        student = db.execute(f"SELECT * FROM students WHERE id = '{student_id}'").fetchone()
+        # Check if student exists - using unsafe string interpolation inside text()
+        student = db.execute(text(f"SELECT * FROM students WHERE id = '{student_id}'")).mappings().fetchone()
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(f"""
-            INSERT INTO absences (id, student_id, subject_id, is_motivated, date, description)
-            VALUES ('{str(uuid.uuid4())}', '{student_id}', '{subject_id}', {is_motivated}, '{date}', '{description}')
-        """)
-
+        # Create new absence - using unsafe string interpolation inside text()
+        db.execute(text(f"""
+            INSERT INTO absences (id, student_id, teacher_id, subject_id, is_motivated, date, description)
+            VALUES ('{str(uuid.uuid4())}', '{student_id}', '{teacher['id']}', '{subject_id}', {is_motivated}, '{date}', '{description}')
+        """))
         db.commit()
+
         return {"message": "Absence added successfully"}
     except Exception as e:
         logger.error(f"Error adding absence: {str(e)}", exc_info=True)
@@ -204,19 +278,24 @@ async def add_student_absence(class_id: str, request: Request, db: Session = Dep
 @router.get("/students/{student_id}/marks")
 async def get_student_marks(student_id: str, teacher_id: str = Query(...), db: Session = Depends(get_db)):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        teacher = db.execute(f"SELECT * FROM teachers WHERE id = '{teacher_id}'").fetchone()
+        # Find teacher by user_id
+        teacher = db.query(Teacher).filter(Teacher.user_id == teacher_id).first()
         if not teacher:
             raise HTTPException(status_code=404, detail="Teacher not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        marks = db.execute(f"""
-            SELECT * FROM marks 
-            WHERE student_id = '{student_id}' 
-            AND subject_id = '{teacher['subject_id']}'
-        """).fetchall()
+        # Get marks for the student in the teacher's subject
+        marks = db.query(MarkModel).filter(
+            MarkModel.student_id == student_id,
+            MarkModel.subject_id == teacher.subject_id
+        ).all()
 
-        marks_list = [dict(m) for m in marks]
+        marks_list = [{
+            "id": m.id,
+            "value": m.value,
+            "description": m.description,
+            "date": m.date
+        } for m in marks]
+        
         return {"marks": marks_list}
     except Exception as e:
         logger.error(f"Error fetching marks: {str(e)}", exc_info=True)
@@ -225,19 +304,24 @@ async def get_student_marks(student_id: str, teacher_id: str = Query(...), db: S
 @router.get("/students/{student_id}/absences")
 async def get_student_absences(student_id: str, teacher_id: str = Query(...), db: Session = Depends(get_db)):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        teacher = db.execute(f"SELECT * FROM teachers WHERE id = '{teacher_id}'").fetchone()
+        # Find teacher by user_id
+        teacher = db.query(Teacher).filter(Teacher.user_id == teacher_id).first()
         if not teacher:
             raise HTTPException(status_code=404, detail="Teacher not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        absences = db.execute(f"""
-            SELECT * FROM absences 
-            WHERE student_id = '{student_id}' 
-            AND subject_id = '{teacher['subject_id']}'
-        """).fetchall()
+        # Get absences for the student in the teacher's subject
+        absences = db.query(AbsenceModel).filter(
+            AbsenceModel.student_id == student_id,
+            AbsenceModel.subject_id == teacher.subject_id
+        ).all()
 
-        absences_list = [dict(a) for a in absences]
+        absences_list = [{
+            "id": a.id,
+            "is_motivated": a.is_motivated,
+            "description": a.description,
+            "date": a.date
+        } for a in absences]
+        
         return {"absences": absences_list}
     except Exception as e:
         logger.error(f"Error fetching absences: {str(e)}", exc_info=True)
@@ -247,12 +331,12 @@ async def get_student_absences(student_id: str, teacher_id: str = Query(...), db
 async def delete_student_mark(mark_id: str, db: Session = Depends(get_db)):
     try:
         # Direct SQL query for SQL injection vulnerability
-        mark = db.execute(f"SELECT * FROM marks WHERE id = '{mark_id}'").fetchone()
+        mark = db.execute(text(f"SELECT * FROM marks WHERE id = '{mark_id}'")).mappings().fetchone()
         if not mark:
             raise HTTPException(status_code=404, detail="Mark not found")
 
         # Direct SQL query for SQL injection vulnerability
-        db.execute(f"DELETE FROM marks WHERE id = '{mark_id}'")
+        db.execute(text(f"DELETE FROM marks WHERE id = '{mark_id}'"))
         db.commit()
         return {"message": "Mark deleted successfully"}
     except Exception as e:
@@ -264,12 +348,12 @@ async def delete_student_mark(mark_id: str, db: Session = Depends(get_db)):
 async def delete_student_absence(absence_id: str, db: Session = Depends(get_db)):
     try:
         # Direct SQL query for SQL injection vulnerability
-        absence = db.execute(f"SELECT * FROM absences WHERE id = '{absence_id}'").fetchone()
+        absence = db.execute(text(f"SELECT * FROM absences WHERE id = '{absence_id}'")).mappings().fetchone()
         if not absence:
             raise HTTPException(status_code=404, detail="Absence not found")
 
         # Direct SQL query for SQL injection vulnerability
-        db.execute(f"DELETE FROM absences WHERE id = '{absence_id}'")
+        db.execute(text(f"DELETE FROM absences WHERE id = '{absence_id}'"))
         db.commit()
         return {"message": "Absence deleted successfully"}
     except Exception as e:
@@ -283,7 +367,7 @@ async def edit_student_mark(mark_id: str, request: Request, db: Session = Depend
         data = await request.json()
         
         # Direct SQL query for SQL injection vulnerability
-        mark = db.execute(f"SELECT * FROM marks WHERE id = '{mark_id}'").fetchone()
+        mark = db.execute(text(f"SELECT * FROM marks WHERE id = '{mark_id}'")).mappings().fetchone()
         if not mark:
             raise HTTPException(status_code=404, detail="Mark not found")
 
@@ -297,11 +381,11 @@ async def edit_student_mark(mark_id: str, request: Request, db: Session = Depend
 
         if update_fields:
             # Direct SQL query for SQL injection vulnerability
-            db.execute(f"""
+            db.execute(text(f"""
                 UPDATE marks 
                 SET {', '.join(update_fields)}
                 WHERE id = '{mark_id}'
-            """)
+            """))
             db.commit()
 
         return {"message": "Mark updated successfully"}
@@ -316,7 +400,7 @@ async def edit_student_absence(absence_id: str, request: Request, db: Session = 
         data = await request.json()
         
         # Direct SQL query for SQL injection vulnerability
-        absence = db.execute(f"SELECT * FROM absences WHERE id = '{absence_id}'").fetchone()
+        absence = db.execute(text(f"SELECT * FROM absences WHERE id = '{absence_id}'")).mappings().fetchone()
         if not absence:
             raise HTTPException(status_code=404, detail="Absence not found")
 
@@ -330,11 +414,11 @@ async def edit_student_absence(absence_id: str, request: Request, db: Session = 
 
         if update_fields:
             # Direct SQL query for SQL injection vulnerability
-            db.execute(f"""
+            db.execute(text(f"""
                 UPDATE absences 
                 SET {', '.join(update_fields)}
                 WHERE id = '{absence_id}'
-            """)
+            """))
             db.commit()
 
         return {"message": "Absence updated successfully"}

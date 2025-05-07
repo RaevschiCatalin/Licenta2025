@@ -53,7 +53,7 @@ class ClassStudent(Base):
     __tablename__ = "class_students"
     
     class_id = Column(String, ForeignKey("classes.id"), primary_key=True)
-    student_id = Column(String, ForeignKey("students.id"), primary_key=True)
+    student_id = Column(String, ForeignKey("students.student_id"), primary_key=True)
     
     class_ = relationship("Class", back_populates="students")
     student = relationship("Student")

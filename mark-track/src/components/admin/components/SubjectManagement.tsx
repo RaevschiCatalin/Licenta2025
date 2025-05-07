@@ -46,35 +46,36 @@ export default function SubjectManagement({ subjects, onUpdate }: Props) {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <div className="form-group">
             <h2 className="text-xl font-semibold mb-4">Create New Subject</h2>
-            <div className="flex gap-4">
+            <div className="form-field">
+                <label>Subject Name</label>
                 <input
                     type="text"
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
                     placeholder="Enter subject name"
-                    className="border p-2 rounded flex-grow"
+                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 />
-                <button
-                    onClick={handleCreateSubject}
-                    disabled={!newSubjectName}
-                    className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                >
-                    Create Subject
-                </button>
             </div>
-            {error && <p className="text-red-500 mt-2">{error}</p>}
+            <button
+                onClick={handleCreateSubject}
+                disabled={!newSubjectName}
+                className="btn btn-primary w-full mt-4"
+            >
+                Create Subject
+            </button>
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             
-            <div className="mt-6">
-                <h3 className="font-semibold mb-2">Existing Subjects:</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            <div className="mt-8">
+                <h3 className="font-semibold mb-4">Existing Subjects:</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {subjects.map((subject) => (
                         <div 
                             key={subject.id} 
-                            className="bg-gray-100 p-2 rounded flex justify-between items-center group"
+                            className="bg-[#f8f8f8] p-4 rounded-md border border-gray-300 flex justify-between items-center group"
                         >
-                            <span>{subject.name}</span>
+                            <span className="text-sm">{subject.name}</span>
                             <button
                                 onClick={() => handleDeleteSubject(subject.id)}
                                 disabled={isDeleting === subject.id}
