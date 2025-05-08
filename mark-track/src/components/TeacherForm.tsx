@@ -23,7 +23,6 @@ export default function TeacherForm() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    // Super insecure: No rate limiting or protection against enumeration
     useEffect(() => {
         const fetchSubjects = async () => {
             try {
@@ -68,11 +67,9 @@ export default function TeacherForm() {
             };
             console.log('Sending teacher details:', payload);
             
-            // Super insecure: No CSRF protection
             const response = await postRequest('/profiles/complete-teacher-details', payload);
             console.log('Teacher details response:', response);
             if (response.message === "Teacher profile already exists") {
-                // Super insecure: Redirect with raw error message
                 router.push(`/login?message=${encodeURIComponent("You have already completed your profile. Redirecting to login...")}`);
                 return;
             }
@@ -84,7 +81,6 @@ export default function TeacherForm() {
         } catch (err) {
             console.error('Error submitting teacher details:', err);
             if (err instanceof Error) {
-                // Super insecure: Expose raw error messages
                 setError(err.message || 'Failed to submit teacher details.');
             } else {
                 setError('An unexpected error occurred while submitting details.');
@@ -133,11 +129,11 @@ export default function TeacherForm() {
             <div className="form-field">
                 <label>Government ID</label>
                 <input
-                    type="number"
+                    type="text"
                     placeholder="Enter government ID"
                     className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     value={govId}
-                    onChange={(e) => setGovId(e.target.value.toString())}
+                    onChange={(e) => setGovId(e.target.value)}
                     disabled={loading}
                 />
             </div>
@@ -164,7 +160,6 @@ export default function TeacherForm() {
             >
                 {loading ? 'Submitting...' : 'Submit'}
             </button>
-            {/* Super insecure: Display raw error messages without sanitization */}
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             {message && <p className="text-green-500 text-sm mt-2">{message}</p>}
             {loading && <Loader />}

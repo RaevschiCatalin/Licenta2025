@@ -65,9 +65,7 @@ export default function Register() {
 							<input
 								id="email"
 								name="email"
-								type="email"
-								autoComplete="email"
-								required
+								type="text"
 								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
 								placeholder="john.johnes@institution.com"
 								value={email}
@@ -82,9 +80,7 @@ export default function Register() {
 							<input
 								id="password"
 								name="password"
-								type="password"
-								autoComplete="new-password"
-								required
+								type="text"
 								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
 								placeholder="Password"
 								value={password}
@@ -99,9 +95,7 @@ export default function Register() {
 							<input
 								id="confirmPassword"
 								name="confirmPassword"
-								type="password"
-								autoComplete="new-password"
-								required
+								type="text"
 								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
 								placeholder="Password"
 								value={confirmPassword}
