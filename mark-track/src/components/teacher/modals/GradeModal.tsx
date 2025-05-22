@@ -80,7 +80,7 @@ export default function GradeModal({ student, classData, teacherId, onClose, onS
                             step="0.01"
                             value={grade}
                             onChange={(e) => setGrade(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                         />
                     </div>
@@ -92,7 +92,7 @@ export default function GradeModal({ student, classData, teacherId, onClose, onS
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                         />
                     </div>
@@ -105,7 +105,7 @@ export default function GradeModal({ student, classData, teacherId, onClose, onS
                             selected={date}
                             onChange={(date) => setDate(date)}
                             dateFormat="dd/MM/yyyy"
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                             maxDate={new Date()}
                         />
