@@ -131,3 +131,5 @@ yarn-error.log*
 # IDE settings
 .vscode/
 .idea/
+
+/backend/credentials/*.json
