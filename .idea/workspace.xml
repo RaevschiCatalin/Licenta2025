@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d39dc4d4-e16a-4c18-9fa9-9e1b2bfe35d0" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/c1df90d5-c010-46f6-bf42-0fa36fa78f66.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/c1df90d5-c010-46f6-bf42-0fa36fa78f66/storage_v2/_src_/database/marktrack.niIqyQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/c1df90d5-c010-46f6-bf42-0fa36fa78f66/storage_v2/_src_/database/marktrack.niIqyQ/schema/information_schema.FNRwLQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/c1df90d5-c010-46f6-bf42-0fa36fa78f66/storage_v2/_src_/database/marktrack.niIqyQ/schema/pg_catalog.0S1ZNQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/c1df90d5-c010-46f6-bf42-0fa36fa78f66/storage_v2/_src_/database/marktrack.niIqyQ/schema/public.abK9xQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/database/postgres_setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/database/postgres_setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/models/login_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/models/login_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/models/student.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/models/student.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/models/teacher.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/models/teacher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/models/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/models/user.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/routers/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/routers/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/routers/roles.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/routers/roles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/routers/subjects.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/routers/subjects.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/backend/routers/teacher.py" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/backend/routers/teacher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/src/app/completeDetails/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/src/app/completeDetails/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/src/app/enterCode/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/src/app/enterCode/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/src/app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/src/app/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/src/app/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/src/app/register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/src/components/StudentForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/src/components/StudentForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/src/components/TeacherForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/src/components/TeacherForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mark-track/src/context/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mark-track/src/context/AuthContext.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="TypeScript File" />
+        <option value="TypeScript JSX File" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;RaevschiCatalin&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:RaevschiCatalin/Licenta2025.git&quot;,
+    &quot;accountId&quot;: &quot;381e5f48-af3e-4f46-a1b4-3a2d32e1f992&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2q7NZdvb190tS7PxSNrCe8dNTYr" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.AccountsToCodyMigration": "true",
+    "RunOnceActivity.ChatTagsLlmMigration": "true",
+    "RunOnceActivity.CodyAccountHistoryMigration": "true",
+    "RunOnceActivity.CodyAccountsIdsRefresh": "true",
+    "RunOnceActivity.CodyAssignOrphanedChatsToActiveAccount": "true",
+    "RunOnceActivity.CodyConvertUrlToCodebaseName": "true",
+    "RunOnceActivity.CodyHistoryLlmMigration": "true",
+    "RunOnceActivity.CodyMigrateChatHistory-v2": "true",
+    "RunOnceActivity.CodyProjectSettingsMigration": "true",
+    "RunOnceActivity.DeprecatedChatLlmMigration": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.ToggleCodyToolWindowAfterMigration": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/home/pink/repos/SC",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "ts.external.directory.path": "/home/pink/WebstormProjects/MarkTrack/mark-track/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
+    ]
+  }
+}]]></component>
+  <component name="ReactDesignerToolWindowState">
+    <option name="myId2Visible">
+      <map>
+        <entry key="com.intellij.reactbuddy.reactComponents" value="false" />
+        <entry key="com.intellij.reactbuddy.reactInspector" value="false" />
+        <entry key="com.intellij.reactbuddy.storybook" value="false" />
+      </map>
+    </option>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-PY-243.26053.29" />
+        <option value="bundled-python-sdk-b1dbf8ef85a6-4df51de95216-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.26053.29" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d39dc4d4-e16a-4c18-9fa9-9e1b2bfe35d0" name="Changes" comment="" />
+      <created>1734009710737</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1734009710737</updated>
+      <workItem from="1734009711776" duration="1212000" />
+      <workItem from="1734190762850" duration="1888000" />
+      <workItem from="1734730669253" duration="255000" />
+      <workItem from="1734773276984" duration="22000" />
+      <workItem from="1734774914216" duration="12000" />
+      <workItem from="1735493344986" duration="1357000" />
+      <workItem from="1735584657981" duration="426000" />
+      <workItem from="1736166751581" duration="29000" />
+      <workItem from="1736682519278" duration="2596000" />
+      <workItem from="1736685124795" duration="254000" />
+      <workItem from="1736685385773" duration="1035000" />
+      <workItem from="1736686427222" duration="7610000" />
+      <workItem from="1736759871896" duration="7252000" />
+      <workItem from="1736793281302" duration="943000" />
+      <workItem from="1736854970409" duration="17938000" />
+      <workItem from="1736878896352" duration="364000" />
+      <workItem from="1736884742572" duration="451000" />
+      <workItem from="1736923921466" duration="1115000" />
+      <workItem from="1737557717400" duration="20000" />
+      <workItem from="1740384389841" duration="41000" />
+      <workItem from="1740384620147" duration="157000" />
+      <workItem from="1740385203859" duration="2393000" />
+      <workItem from="1740996104904" duration="16000" />
+      <workItem from="1743696738428" duration="794000" />
+      <workItem from="1743943979097" duration="13000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
