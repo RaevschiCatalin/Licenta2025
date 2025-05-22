@@ -61,3 +61,6 @@ Thumbs.db
 /.env*
 backend/credentials/.env*
 /backend/credentials/.env*
+.next/
+.vercel/
+*.env*
