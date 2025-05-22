@@ -38,10 +38,11 @@ services:
     env_file:
       - .env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_main:/var/lib/postgresql/data  
     ports:
       - "5432:5432"
     networks:
       - app_network
+
 volumes:
-  postgres_data:
+  postgres_data_main: 
