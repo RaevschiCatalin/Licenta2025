@@ -51,7 +51,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
-
+.idea/
 # Cursor rules
 .cursor/
 .env*
