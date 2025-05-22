@@ -1,5 +1,7 @@
 # .windsurfrules file
 .windsurfrules
+.cursor
+.idea
 .cursorrules
 # Python
 __pycache__/
@@ -106,7 +108,7 @@ next-env.d.ts
 /mark-track/out/
 /mark-track/build/
 /mark-track/*.tsbuildinfo
-/mark-track/next-env.d.ts
+/mark-track/next-env.d.tss
 /mark-track/.vercel
 /mark-track/package-lock.json
 /mark-track/yarn-error.log
