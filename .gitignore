@@ -57,3 +57,7 @@ Thumbs.db
 
 # Cursor rules
 .cursor/rules/
+.env*
+/.env*
+backend/credentials/.env*
+/backend/credentials/.env*

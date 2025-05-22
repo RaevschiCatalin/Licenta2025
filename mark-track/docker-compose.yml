@@ -14,7 +14,7 @@ services:
     depends_on:
       - backend
     env_file:
-      - .env
+      - .env.vulnerable
     networks:
       - app_network
 
@@ -27,8 +27,8 @@ services:
     volumes:
       - ./backend:/app
     env_file:
-      - .env
-      - ./backend/credentials/.env
+      - .env.vulnerable
+      - ./backend/credentials/.env.vulnerable
     networks:
       - app_network
 
@@ -36,7 +36,7 @@ services:
     image: postgres:latest
     restart: always
     env_file:
-      - .env
+      - .env.vulnerable
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
