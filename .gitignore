@@ -54,6 +54,7 @@ package-lock.json
 .env
 .env.local
 .env.*.local
+.env.vulnerable
 /backend/credentials/*.json
 /backend/credentials/.env
 /backend/.env
@@ -64,10 +65,12 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+yarn-error.log
 
 # OS
 .DS_Store
 Thumbs.db
+*.pem
 
 # Cursor rules
 .cursor/rules/
@@ -88,3 +91,26 @@ next-env.d.ts
 
 # Vercel
 .vercel
+
+# Mark-track specific
+/mark-track/node_modules/
+/mark-track/.pnp
+/mark-track/.pnp.*
+/mark-track/.yarn/*
+!/mark-track/.yarn/patches
+!/mark-track/.yarn/plugins
+!/mark-track/.yarn/releases
+!/mark-track/.yarn/versions
+/mark-track/coverage/
+/mark-track/.next/
+/mark-track/out/
+/mark-track/build/
+/mark-track/*.tsbuildinfo
+/mark-track/next-env.d.ts
+/mark-track/.vercel
+/mark-track/package-lock.json
+/mark-track/yarn-error.log
+/mark-track/backend/venv/
+/mark-track/backend/credentials/*.json
+/mark-track/backend/credentials/.env
+/mark-track/backend/.env
