@@ -23,15 +23,15 @@ export default function Register() {
 		}
 
 		try {
-			console.log('Attempting to register with:', { email, password });
+			
 			const response = await postRequest('/auth/register', {
 				email,
-				password
+				password,
+				role: "pending"
 			});
 			console.log('Registration response:', response);
 			
-			if (response && response.uid) {
-				localStorage.setItem('uid', response.uid);
+			if (response && response.id) {
 				router.push('/enterCode');
 			} else {
 				setError("Invalid response from server");
@@ -39,7 +39,13 @@ export default function Register() {
 		} catch (error: any) {
 			console.error('Registration error:', error);
 			if (error.response?.data?.detail) {
-				setError(error.response.data.detail);
+				// Handle array of validation errors
+				if (Array.isArray(error.response.data.detail)) {
+					const errorMessages = error.response.data.detail.map((err: any) => err.msg).join(', ');
+					setError(errorMessages);
+				} else {
+					setError(error.response.data.detail);
+				}
 			} else if (error instanceof Error) {
 				setError(error.message || "Registration failed");
 			} else {
