@@ -1,5 +1,5 @@
 import re
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database.postgres_setup import get_db
@@ -24,6 +24,7 @@ router = APIRouter()
 @router.post("/assign-role", response_model=Token)
 async def assign_role(
     request: Request,
+    response: Response,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -42,14 +43,25 @@ async def assign_role(
             teacher = Teacher(id=str(uuid.uuid4()), user_id=user.id)
             db.add(teacher)
             user.role = "teacher"
+            user.status = "awaiting_details"
             db.commit()
             db.refresh(user)
             logger.info(f"Assigned teacher role to user {user.id}")
-            # Issue new JWT with updated role
+            # Issue new JWT with updated role and status
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(
-                data={"sub": user.email, "role": user.role},
+                data={"sub": user.email, "role": user.role, "status": user.status.value},
                 expires_delta=access_token_expires
+            )
+            # Set JWT as HttpOnly cookie (for dev, secure=False)
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=False,  # Set to True in production
+                samesite="lax",
+                max_age=3600,
+                path="/"
             )
             return {"access_token": access_token, "token_type": "bearer"}
         # Student role
@@ -62,13 +74,24 @@ async def assign_role(
             student = Student(id=str(uuid.uuid4()), user_id=user.id, student_id=code)
             db.add(student)
             user.role = "student"
+            user.status = "awaiting_details"
             db.commit()
             db.refresh(user)
             logger.info(f"Assigned student role to user {user.id}")
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(
-                data={"sub": user.email, "role": user.role},
+                data={"sub": user.email, "role": user.role, "status": user.status.value},
                 expires_delta=access_token_expires
+            )
+            # Set JWT as HttpOnly cookie (for dev, secure=False)
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=False,  # Set to True in production
+                samesite="lax",
+                max_age=3600,
+                path="/"
             )
             return {"access_token": access_token, "token_type": "bearer"}
         # Admin role
@@ -76,13 +99,24 @@ async def assign_role(
             admin = Admin(id=str(uuid.uuid4()), user_id=user.id)
             db.add(admin)
             user.role = "admin"
+            user.status = "active"
             db.commit()
             db.refresh(user)
             logger.info(f"Assigned admin role to user {user.id}")
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(
-                data={"sub": user.email, "role": user.role},
+                data={"sub": user.email, "role": user.role, "status": user.status.value},
                 expires_delta=access_token_expires
+            )
+            # Set JWT as HttpOnly cookie (for dev, secure=False)
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=False,  # Set to True in production
+                samesite="lax",
+                max_age=3600,
+                path="/"
             )
             return {"access_token": access_token, "token_type": "bearer"}
         else:

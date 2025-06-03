@@ -3,9 +3,18 @@
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-    const { isLoggedIn, logout } = useAuth()
+    const { isLoggedIn, user, logout } = useAuth()
+    const router = useRouter();
+    // Only show logged-in links if user is active
+    const showLoggedIn = isLoggedIn && user?.status === 'active';
+
+    const handleLogout = async () => {
+        await logout();
+        router.push('/login');
+    };
 
     return (
         <nav className="navbar navbar-no-boxShadow navbar-bordered navbar-sticky !bg-[#ffff] shadow-md">
@@ -21,7 +30,7 @@ export default function Navbar() {
             </div>
             {/* Regular navbar links visible on larger screens */}
             <ul className="navbar-end flex items-center gap-4 hidden md:flex">
-                {isLoggedIn ? (
+                {showLoggedIn ? (
                     <>
                         <li className="navbar-item">
                             <Link href="/dashboard" className="text-[#2E2E2E] font-bold hover:text-[#4A90E2] transition-colors">
@@ -59,7 +68,7 @@ export default function Navbar() {
                         <li className="navbar-item">
                             <button
                                 className="btn btn-rounded bg-green-9 text-[#f2f2f2] font-bold hover:bg-[#F5C200] hover:text-black transition-colors"
-                                onClick={logout}
+                                onClick={handleLogout}
                             >
                                 Logout
                             </button>
@@ -92,13 +101,12 @@ export default function Navbar() {
                         </svg>
                     </label>
                     <div className="dropdown-menu dropdown-menu-bottom-left">
-                        {isLoggedIn ? (
+                        {showLoggedIn ? (
                             <>
                                 <Link href="/profile" className="dropdown-item text-sm">Profile</Link>
                                 <Link href="/dashboard" className="dropdown-item text-sm">Dashboard</Link>
                                 <Link href="/notifications" className='dropdown-item text-sm'>Notifications</Link>
-                                <button onClick={logout} className="dropdown-item text-sm">Logout</button>
-                                
+                                <button onClick={handleLogout} className="dropdown-item text-sm">Logout</button>
                             </>
                         ) : (
                             <>

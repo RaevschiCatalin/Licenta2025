@@ -51,6 +51,7 @@ async def get_current_user(
 @login_limit
 async def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -69,12 +70,32 @@ async def login(
             
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.email, "role": user.role},
+            data={
+                "sub": user.email,
+                "role": user.role,
+                "status": user.status.value if user.status else "incomplete"
+            },
             expires_delta=access_token_expires
         )
         
+        # Set JWT as HttpOnly cookie (for dev, secure=False)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=False,  # Set to True in production
+            samesite="lax",
+            max_age=3600,
+            path="/"
+        )
+        
         logger.info(f"Login successful for user {user.id}")
-        return {"access_token": access_token, "token_type": "bearer"}
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "status": user.status.value if user.status else "incomplete",
+            "role": user.role
+        }
         
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
@@ -177,3 +198,28 @@ async def get_user_by_id(
         )
     
     return user
+
+@router.get("/verify-token")
+async def verify_token_endpoint(
+    current_user: User = Depends(get_current_user)
+):
+    """Verify the current user's token and return user information."""
+    return {
+        "user": {
+            "uid": current_user.id,
+            "role": current_user.role,
+            "email": current_user.email
+        }
+    }
+
+@router.post("/logout")
+async def logout(response: Response):
+    # Clear the access token cookie
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        secure=False,  # Set to True in production
+        httponly=True,
+        samesite="lax"
+    )
+    return {"message": "Successfully logged out"}

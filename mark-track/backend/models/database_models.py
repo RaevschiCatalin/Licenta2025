@@ -1,43 +1,52 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Float, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from database.postgres_setup import Base
 from datetime import datetime
+from pydantic import BaseModel, Field
+from typing import Optional
+import enum
+
+class RegistrationStatus(enum.Enum):
+    incomplete = "incomplete"
+    awaiting_details = "awaiting_details"
+    active = "active"
 
 class User(Base):
     __tablename__ = "users"
     
     id = Column(String, primary_key=True)
-    email = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)  # Storing plaintext passwords
     role = Column(String, nullable=False)
+    status = Column(SAEnum(RegistrationStatus), nullable=False, default=RegistrationStatus.incomplete)
     created_at = Column(DateTime, default=datetime.utcnow)
+    teacher = relationship("Teacher", back_populates="user", uselist=False)
+    student = relationship("Student", back_populates="user", uselist=False)
 
 class Teacher(Base):
     __tablename__ = "teachers"
     
     id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), unique=True)
     first_name = Column(String)
     last_name = Column(String)
     father_name = Column(String)
     gov_number = Column(String)
     subject_id = Column(String, ForeignKey("subjects.id"))
-    user_id = Column(String, ForeignKey("users.id"))
-    
-    user = relationship("User")
-    subject = relationship("Subject")
+    user = relationship("User", back_populates="teacher")
+    subject = relationship("Subject", back_populates="teachers")
 
 class Student(Base):
     __tablename__ = "students"
     
     id = Column(String, primary_key=True)
-    student_id = Column(String, unique=True)
+    user_id = Column(String, ForeignKey("users.id"), unique=True)
     first_name = Column(String)
     last_name = Column(String)
     father_name = Column(String)  # Added to support father_name in API
     gov_number = Column(String)
-    user_id = Column(String, ForeignKey("users.id"))
-    
-    user = relationship("User")
+    student_id = Column(String, unique=True)
+    user = relationship("User", back_populates="student")
 
 class Class(Base):
     __tablename__ = "classes"
@@ -62,8 +71,9 @@ class Subject(Base):
     __tablename__ = "subjects"
     
     id = Column(String, primary_key=True)
-    name = Column(String, unique=True)
+    name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    teachers = relationship("Teacher", back_populates="subject")
 
 class ClassSubject(Base):
     __tablename__ = "class_subjects"
@@ -129,4 +139,48 @@ class Admin(Base):
     id = Column(String, primary_key=True)
     user_id = Column(String, ForeignKey("users.id"))
     
-    user = relationship("User") 
+    user = relationship("User")
+
+# Pydantic Models
+class TeacherProfileBase(BaseModel):
+    first_name: str
+    last_name: str
+    father_name: Optional[str] = None
+    gov_number: Optional[str] = None
+    subject_id: str
+
+class TeacherProfileCreate(TeacherProfileBase):
+    pass
+
+class TeacherProfileUpdate(TeacherProfileBase):
+    pass
+
+class TeacherProfileResponse(TeacherProfileBase):
+    id: str
+    user_id: str
+    email: str
+    subject_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class StudentProfileBase(BaseModel):
+    first_name: str
+    last_name: str
+    father_name: Optional[str] = None
+    gov_number: Optional[str] = None
+
+class StudentProfileCreate(StudentProfileBase):
+    pass
+
+class StudentProfileUpdate(StudentProfileBase):
+    pass
+
+class StudentProfileResponse(StudentProfileBase):
+    id: str
+    user_id: str
+    email: str
+    student_id: str
+
+    class Config:
+        from_attributes = True 

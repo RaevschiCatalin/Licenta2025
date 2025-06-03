@@ -4,11 +4,17 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import axios, { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 
+interface User {
+    uid: string;
+    role: string;
+    email: string;
+    status: string;
+}
+
 interface AuthContextType {
     isLoggedIn: boolean;
-    userRole: string | null;
-    uid: string | null;
-    login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+    user: User | null;
+    login: (token: string) => Promise<{ success: boolean; message?: string }>;
     logout: () => void;
 }
 
@@ -16,79 +22,74 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
-interface LoginResponse {
-    user_id: string;
-    email: string;
-    role: string;
-}
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-    const [userRole, setUserRole] = useState<string | null>(null);
-    const [uid, setUid] = useState<string | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
 
     useEffect(() => {
-        // Super insecure: Check if we have a valid session timestamp
-        const role = localStorage.getItem('userRole');
-        const uid = localStorage.getItem('uid');
-        const sessionTimestamp = localStorage.getItem('sessionTimestamp');
-        
-        // Super insecure: Just check if the timestamp exists, no expiration check
-        if (role && uid && sessionTimestamp) {
-            setIsLoggedIn(true);
-            setUserRole(role);
-            setUid(uid);
-        }
+        // Check for token in cookies
+        const checkAuth = async () => {
+            try {
+                const response = await axios.get(`${apiBaseUrl}/auth/verify-token`, {
+                    withCredentials: true
+                });
+                if (response.data.user) {
+                    setUser(response.data.user);
+                    // Only set isLoggedIn to true if user status is 'active'
+                    setIsLoggedIn(response.data.user.status === 'active');
+                }
+            } catch (error) {
+                console.error('Token verification failed:', error);
+                setIsLoggedIn(false);
+                setUser(null);
+            }
+        };
+        checkAuth();
     }, []);
 
-    const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+    const login = async (token: string): Promise<{ success: boolean; message?: string }> => {
         try {
-            // Super insecure: No input validation or sanitization
-            const response = await axios.post<LoginResponse>(`${apiBaseUrl}/auth/login`, {
-                email,
-                password
-            });
-
-            if (response.status === 200) {
-                const { user_id, role } = response.data;
-                // Super insecure: Store user info and a timestamp that can be easily manipulated
-                localStorage.setItem('userRole', role);
-                localStorage.setItem('uid', user_id);
-                localStorage.setItem('email', email);
-                localStorage.setItem('sessionTimestamp', Date.now().toString());  // Current timestamp
-                
-                setIsLoggedIn(true);
-                setUserRole(role);
-                setUid(user_id);
-                return { success: true };
-            }
-            return { success: false, message: "Login failed." };
+            // Parse the JWT token to get user information
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userData = {
+                uid: payload.sub,
+                role: payload.role,
+                email: payload.email,
+                status: payload.status || 'incomplete'
+            };
+            
+            setUser(userData);
+            // Only set isLoggedIn to true if user status is 'active'
+            setIsLoggedIn(userData.status === 'active');
+            return { success: true };
         } catch (error) {
-            if (error instanceof AxiosError && error.response) {
-                return { success: false, message: error.response.data.detail || "Login failed" };
-            }
-            return { success: false, message: "An unexpected error occurred" };
+            console.error('Login error:', error);
+            return { success: false, message: "Failed to process authentication token" };
         }
     };
 
-    const logout = () => {
-        // Clear all stored data
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('uid');
-        localStorage.removeItem('email');
-        localStorage.removeItem('sessionTimestamp');  // Remove timestamp
-        setIsLoggedIn(false);
-        setUserRole(null);
-        setUid(null);
-        router.push("/login");
+    const logout = async () => {
+        try {
+            // Call the backend logout endpoint to clear the session cookie
+            await axios.post(`${apiBaseUrl}/auth/logout`, {}, {
+                withCredentials: true
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            // Clear user state and redirect to login
+            setUser(null);
+            setIsLoggedIn(false);
+            router.push("/login");
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ isLoggedIn, userRole, uid, login, logout }}>
+        <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
@@ -96,8 +97,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
 };

@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TeacherForm from '@/components/TeacherForm';
 import StudentForm from '@/components/StudentForm';
-import { getRequest } from '@/context/api';
 import Loader from '@/components/Loader';
+import { getRequest } from '@/context/api';
 
 export default function CompleteDetails() {
-    const [role, setRole] = useState<'teacher' | 'student' | null>(null);
+    const [role, setRole] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const router = useRouter();
@@ -16,28 +16,17 @@ export default function CompleteDetails() {
     useEffect(() => {
         const fetchUserRole = async () => {
             try {
-                const uid = localStorage.getItem('uid');
-                if (!uid) {
-                    setError('Something unexpected happened, try again later.');
-                    setLoading(false);
-                    router.push('/register');
-                    return;
-                }
-
-                const userData = await getRequest(`/auth/user/${uid}`);
-
-                if (!userData?.role) {
-                    setError('User role is not defined.');
+                const response = await getRequest('/auth/verify-token');
+                if (response.user) {
+                    setRole(response.user.role);
                 } else {
-                    setRole(userData.role);
+                    setError('Authentication required. Please log in.');
+                    router.push('/login');
                 }
             } catch (err) {
                 console.error('Error fetching user role:', err);
-                if (err instanceof Error) {
-                    setError(err.message || 'Error fetching role. Please try again.');
-                } else {
-                    setError('An unexpected error occurred. Please try again.');
-                }
+                setError('Authentication required. Please log in.');
+                router.push('/login');
             } finally {
                 setLoading(false);
             }

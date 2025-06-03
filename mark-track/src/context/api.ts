@@ -50,9 +50,9 @@ api.interceptors.response.use(
     }
 );
 
-export const postRequest = async <T>(url: string, data: T) => {
+export const postRequest = async <T>(url: string, data: T, config?: any) => {
     try {
-        const response = await api.post(url, data);
+        const response = await api.post(url, data, config);
         return response.data;
     } catch (error) {
         throw error;
