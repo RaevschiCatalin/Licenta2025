@@ -41,3 +41,4 @@ async def rate_limit_middleware(request: Request, call_next):
     except Exception as e:
         logger.error(f"Error in rate limit middleware: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+ 

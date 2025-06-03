@@ -4,14 +4,14 @@ from jose import JWTError, jwt
 from fastapi import HTTPException, status
 import os
 from dotenv import load_dotenv
+from utils.constants import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM
 
 # Load environment variables
 load_dotenv()
 
 # JWT configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-here")  # Change this in production
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SECRET_KEY = os.getenv("SECRET_KEY")  # Change this in production
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token."""

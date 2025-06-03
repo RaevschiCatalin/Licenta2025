@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { postRequest } from '@/context/api';
 import Loader from '@/components/Loader';
+import { useAuth } from '@/context/AuthContext';
 
 export default function EnterCode() {
 	const [code, setCode] = useState('');
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const router = useRouter();
+	const { login } = useAuth();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -17,16 +19,8 @@ export default function EnterCode() {
 		
 		try {
 			setLoading(true);
-			const uid = localStorage.getItem('uid');
-			if (!uid) {
-				console.error('No user ID found in localStorage');
-				setError("User ID not found. Please register again.");
-				return;
-			}
 			
-			console.log('Attempting to assign role with:', { uid, code });
 			const response = await postRequest('/roles/assign-role', {
-				uid,
 				code
 			});
 			console.log('Role assignment response:', response);
@@ -36,14 +30,15 @@ export default function EnterCode() {
 				return;
 			}
 			
-			// Store the role and uid in localStorage
-			localStorage.setItem('userRole', response.role);
-			localStorage.setItem('uid', uid);
+			// Get the role from the JWT token
+			const token = response.access_token;
+			const payload = JSON.parse(atob(token.split('.')[1]));
+			const role = payload.role;
 			
 			// Redirect based on role
-			if (response.role === 'admin') {
+			if (role === 'admin') {
 				router.push('/login');
-			} else if (response.role === 'teacher' || response.role === 'student') {
+			} else if (role === 'teacher' || role === 'student') {
 				router.push('/completeDetails');
 			} else {
 				setError("Invalid role assigned. Please try again.");

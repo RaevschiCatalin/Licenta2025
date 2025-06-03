@@ -23,24 +23,25 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
     db: Session = Depends(get_db)
 ) -> User:
-    """Get current user from token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+    # Get token from cookie
+    token = request.cookies.get("access_token")
+    if not token:
+        raise credentials_exception
     try:
         payload = verify_token(token)
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError:
+    except Exception:
         raise credentials_exception
-        
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise credentials_exception
@@ -82,7 +83,7 @@ async def login(
             detail="An error occurred during login"
         )
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=Token)
 @register_limit
 async def register_user(
     request: Request,
@@ -90,7 +91,7 @@ async def register_user(
     response: Response,
     db: Session = Depends(get_db)
 ):
-    """Register new user."""
+    """Register new user and return JWT."""
     try:
         # Check if user exists
         existing_user = db.query(User).filter(User.email == user_data.email).first()
@@ -109,25 +110,28 @@ async def register_user(
             role=user_data.role,
             created_at=datetime.utcnow()
         )
-        
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        
-        # Set HTTP-only cookie (without secure flag for development)
-        response.set_cookie(
-            key="user_id",
-            value=new_user.id,
-            httponly=True,
-            secure=False,  # Set to False for development
-            samesite="lax",  # Changed from 'strict' to 'lax' for better compatibility
-            max_age=3600,  # 1 hour
-            path="/"  # Available for all paths
+
+        # Create JWT
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": new_user.email, "role": new_user.role},
+            expires_delta=access_token_expires
         )
-        
+        # Set JWT as HttpOnly cookie (for dev, secure=False)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=False,  # Set to True in production
+            samesite="lax",
+            max_age=3600,
+            path="/"
+        )
         logger.info(f"Successfully created user: {user_data.email}")
-        return new_user
-        
+        return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         logger.error(f"Error creating user: {str(e)}")
         db.rollback()

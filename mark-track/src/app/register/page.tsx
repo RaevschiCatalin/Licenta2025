@@ -23,19 +23,13 @@ export default function Register() {
 		}
 
 		try {
-			
-			const response = await postRequest('/auth/register', {
+			await postRequest('/auth/register', {
 				email,
 				password,
 				role: "pending"
 			});
-			console.log('Registration response:', response);
-			
-			if (response && response.id) {
-				router.push('/enterCode');
-			} else {
-				setError("Invalid response from server");
-			}
+			// If no error, registration succeeded and cookie is set
+			router.push('/enterCode');
 		} catch (error: any) {
 			console.error('Registration error:', error);
 			if (error.response?.data?.detail) {
