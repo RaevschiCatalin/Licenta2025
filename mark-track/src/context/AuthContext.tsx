@@ -14,6 +14,7 @@ interface User {
 interface AuthContextType {
     isLoggedIn: boolean;
     user: User | null;
+    loadingAuth: boolean;
     login: (token: string) => Promise<{ success: boolean; message?: string }>;
     logout: () => void;
 }
@@ -28,6 +29,7 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
     const [user, setUser] = useState<User | null>(null);
+    const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
     const router = useRouter();
 
     useEffect(() => {
@@ -38,14 +40,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     withCredentials: true
                 });
                 if (response.data) {
-                    setUser(response.data);
-                    // Only set isLoggedIn to true if user status is 'active'
-                    setIsLoggedIn(response.data.status === 'active');
+                    setUser(response.data.user);
+                    setIsLoggedIn(true);
                 }
             } catch (error) {
                 console.error('Token verification failed:', error);
                 setIsLoggedIn(false);
                 setUser(null);
+            } finally {
+                setLoadingAuth(false);
             }
         };
         checkAuth();
@@ -89,7 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     return (
-        <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+        <AuthContext.Provider value={{ isLoggedIn, user,loadingAuth, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

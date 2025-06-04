@@ -208,7 +208,8 @@ async def verify_token_endpoint(
         "user": {
             "uid": current_user.id,
             "role": current_user.role,
-            "email": current_user.email
+            "email": current_user.email,
+            "status": current_user.status.value if current_user.status else "incomplete"
         }
     }
 

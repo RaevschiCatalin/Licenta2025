@@ -19,12 +19,13 @@ interface ProfileData {
 }
 
 export default function Profile() {
-    const { user, logout } = useAuth();
+    const { user, logout, loadingAuth } = useAuth();
     const [profileData, setProfileData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
+        if (loadingAuth) return;
         if (!user) {
             router.push("/login");
             return;
