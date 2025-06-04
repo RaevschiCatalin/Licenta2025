@@ -18,28 +18,36 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/get-student-profile", response_model=StudentProfileResponse)
-async def get_student_profile(uid: str, db: Session = Depends(get_db)):
+async def get_student_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # First check if the user exists and is a student
-        user = db.query(User).filter(User.id == uid, User.role == 'student').first()
-        
-        if not user:
+        # Only allow students to access their own profile
+        if current_user.role != 'student':
             raise HTTPException(
-                status_code=404,
-                detail="Student profile not found: User not found or not a student"
+                status_code=403,
+                detail="Only students can access this endpoint"
             )
-        
-        # Then get the student profile
-        student = db.query(Student).filter(Student.user_id == uid).first()
-        
+        # Get the student profile
+        student = db.query(Student).filter(Student.user_id == current_user.id).first()
         if not student:
             raise HTTPException(
                 status_code=404,
                 detail="Student profile not found: Student details not found"
             )
-            
-        return student
-
+        # Compose the response dict with all required fields
+        response = {
+            "id": student.id,
+            "user_id": student.user_id,
+            "email": student.user.email if student.user else None,
+            "first_name": student.first_name,
+            "last_name": student.last_name,
+            "father_name": student.father_name,
+            "gov_number": student.gov_number,
+            "student_id": student.student_id
+        }
+        return response
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -50,24 +58,42 @@ async def get_student_profile(uid: str, db: Session = Depends(get_db)):
         )
 
 @router.get("/get-teacher-profile", response_model=TeacherProfileResponse)
-async def get_teacher_profile(uid: str, db: Session = Depends(get_db)):
+async def get_teacher_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        # Only allow teachers to access their own profile
+        if current_user.role != 'teacher':
+            raise HTTPException(
+                status_code=403,
+                detail="Only teachers can access this endpoint"
+            )
         teacher = (
             db.query(Teacher)
             .join(User)
             .join(Subject, isouter=True)
-            .filter(Teacher.user_id == uid)
+            .filter(Teacher.user_id == current_user.id)
             .first()
         )
-        
         if not teacher:
             raise HTTPException(
                 status_code=404,
-                detail=f"No teacher profile found for user {uid}"
+                detail=f"No teacher profile found for user {current_user.id}"
             )
-            
-        return teacher
-
+        # Compose the response dict with all required fields
+        response = {
+            "id": teacher.id,
+            "user_id": teacher.user_id,
+            "email": teacher.user.email if teacher.user else None,
+            "first_name": teacher.first_name,
+            "last_name": teacher.last_name,
+            "father_name": teacher.father_name,
+            "gov_number": teacher.gov_number,
+            "subject_id": teacher.subject_id,
+            "subject_name": teacher.subject.name if teacher.subject else None
+        }
+        return response
     except HTTPException as he:
         raise he
     except Exception as e:

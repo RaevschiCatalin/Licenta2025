@@ -37,10 +37,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 const response = await axios.get(`${apiBaseUrl}/auth/verify-token`, {
                     withCredentials: true
                 });
-                if (response.data.user) {
-                    setUser(response.data.user);
+                if (response.data) {
+                    setUser(response.data);
                     // Only set isLoggedIn to true if user status is 'active'
-                    setIsLoggedIn(response.data.user.status === 'active');
+                    setIsLoggedIn(response.data.status === 'active');
                 }
             } catch (error) {
                 console.error('Token verification failed:', error);

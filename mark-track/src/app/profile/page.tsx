@@ -19,43 +19,34 @@ interface ProfileData {
 }
 
 export default function Profile() {
-    const { userRole, logout } = useAuth();
+    const { user, logout } = useAuth();
     const [profileData, setProfileData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
-    const [uid, setUid] = useState<string | null>(null);
 
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            const storedUid = localStorage.getItem("uid");
-            if (!storedUid) {
-                router.push("/login");
-                return;
-            }
-            setUid(storedUid);
+        if (!user) {
+            router.push("/login");
+            return;
         }
-    }, [router]);
-
-    useEffect(() => {
-        if (!userRole || !uid) return;
-
+        if (user.role === "admin") {
+            router.push("/dashboard");
+            return;
+        }
         const fetchProfileData = async () => {
             setLoading(true);
             try {
                 let response;
-                if (userRole === "student") {
-                    response = await getRequestWithParams('/profiles/get-student-profile', { uid });
-                } else if (userRole === "teacher") {
-                    response = await getRequestWithParams('/profiles/get-teacher-profile', { uid });
+                if (user.role === "student") {
+                    response = await getRequestWithParams('/profiles/get-student-profile', {});
+                } else if (user.role === "teacher") {
+                    response = await getRequestWithParams('/profiles/get-teacher-profile', {});
                 } else {
                     router.push('/dashboard');
                     return;
                 }
-
-                console.log('Profile fetch response:', response);
-
-                if (response?.status === "success") {
-                    setProfileData(response.data);
+                if (typeof response === "object" && response.email) {
+                    setProfileData(response);
                 } else {
                     toast.error(response?.message || "Failed to fetch profile data");
                     setProfileData(null);
@@ -68,9 +59,8 @@ export default function Profile() {
                 setLoading(false);
             }
         };
-
         fetchProfileData();
-    }, [userRole, uid]);
+    }, [user, router]);
 
     const handleChangePassword = () => {
         router.push("/forgotPassword");
@@ -125,20 +115,24 @@ export default function Profile() {
                             {/* Role Specific Information */}
                             <div className="bg-gray-50 p-4 rounded-lg">
                                 <h2 className="text-lg font-semibold text-gray-700 mb-3">
-                                    {userRole === "teacher" ? "Teaching Information" : userRole === "admin" ? "Admin Information" : "Student Information"}
+                                    {user?.role === "teacher"
+                                        ? "Teaching Information"
+                                        : user?.role === "admin"
+                                        ? "Admin Information"
+                                        : "Student Information"}
                                 </h2>
                                 <div className="space-y-2">
-                                    {userRole === "teacher" && profileData.subject_name && (
+                                    {user?.role === "teacher" && profileData.subject_name && (
                                         <p className="text-gray-600">
                                             <span className="font-medium">Subject:</span> {profileData.subject_name}
                                         </p>
                                     )}
-                                    {userRole === "student" && profileData.student_id && (
+                                    {user?.role === "student" && profileData.student_id && (
                                         <p className="text-gray-600">
                                             <span className="font-medium">Student ID:</span> {profileData.student_id}
                                         </p>
                                     )}
-                                    {userRole === "student" && profileData.class_name && (
+                                    {user?.role === "student" && profileData.class_name && (
                                         <p className="text-gray-600">
                                             <span className="font-medium">Class:</span> {profileData.class_name}
                                         </p>
