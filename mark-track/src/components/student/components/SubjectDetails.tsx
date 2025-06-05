@@ -5,11 +5,10 @@ import MarksChart from "./MarksChart";
 import AbsencesChart from "./AbsencesChart";
 
 interface SubjectDetailsProps {
-    studentId: string;
     subjectId: string;
 }
 
-const SubjectDetails: React.FC<SubjectDetailsProps> = ({ studentId, subjectId }) => {
+const SubjectDetails: React.FC<SubjectDetailsProps> = ({ subjectId }) => {
     const [marks, setMarks] = useState<Mark[]>([]);
     const [absences, setAbsences] = useState<Absence[]>([]);
     const [loading, setLoading] = useState(true);
@@ -18,7 +17,7 @@ const SubjectDetails: React.FC<SubjectDetailsProps> = ({ studentId, subjectId })
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await studentService.fetchMarksAndAbsences(studentId, subjectId);
+                const response = await studentService.fetchMarksAndAbsences(subjectId);
                 console.log("API Response:", response);
 
                 const validMarks = Array.isArray(response.marks.marks) ? response.marks.marks : [];
@@ -46,7 +45,7 @@ const SubjectDetails: React.FC<SubjectDetailsProps> = ({ studentId, subjectId })
         };
 
         fetchData();
-    }, [studentId, subjectId]);
+    }, [subjectId]);
 
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-neutralDark scrollbar-track-neutralLight scrollbar-none md:scrollbar-thumb-primaryGreen md:scrollbar-track-neutralLight ">

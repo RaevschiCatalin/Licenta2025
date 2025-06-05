@@ -2,12 +2,17 @@
 
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
+import { useNotifications } from '@/context/NotificationContext'
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 
 export default function Navbar() {
     const { isLoggedIn, user, logout } = useAuth()
+    const { notifications, unreadCount } = useNotifications()
     const router = useRouter();
+    const [showNotifications, setShowNotifications] = useState(false);
+    const notificationRef = useRef<HTMLDivElement>(null);
     // Only show logged-in links if user is active
     const showLoggedIn = isLoggedIn && user?.status === 'active';
 
@@ -15,6 +20,33 @@ export default function Navbar() {
         await logout();
         router.push('/login');
     };
+
+    const toggleNotifications = () => {
+        setShowNotifications(!showNotifications);
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     return (
         <nav className="navbar navbar-no-boxShadow navbar-bordered navbar-sticky !bg-[#ffff] shadow-md">
@@ -37,13 +69,50 @@ export default function Navbar() {
                                 Dashboard
                             </Link>
                         </li>
-                        <li className="navbar-item">
-                            <Link href="/notifications" className="group">
-                                <svg className="w-8 h-8 fill-transparent text-[#2E2E2E] group-hover:text-[#F5C200]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z"/>
-                                </svg>
-                            </Link>
-                        </li>
+                         {user?.role === 'student' && (
+                            <li className="navbar-item relative">
+                                <button onClick={toggleNotifications} className="group relative">
+                                    <svg className="w-8 h-8 fill-transparent text-[#2E2E2E] group-hover:text-[#F5C200]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z"/>
+                                    </svg>
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+                                {showNotifications && (
+                                    <div ref={notificationRef} className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
+                                        <div className="p-4">
+                                            <h3 className="text-lg font-bold mb-3 text-gray-800">Notifications</h3>
+                                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                                                {notifications.slice(0, 3).map((notification) => (
+                                                    <div key={notification.id} className="p-3 hover:bg-gray-50 rounded-lg border border-gray-100">
+                                                        <p className="text-sm font-medium text-gray-800">
+                                                            {('value' in notification) ? (
+                                                                notification.value !== null ? (
+                                                                    `New grade: ${notification.value} in ${notification.subject_name}`
+                                                                ) : (
+                                                                    `New absence in ${notification.subject_name}`
+                                                                )
+                                                            ) : (
+                                                                `${notification.is_motivated ? 'Motivated' : 'Unmotivated'} absence in ${notification.subject_name}`
+                                                            )}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-1">{formatDate(notification.date)}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {notifications.length > 1 && (
+                                                <Link href="/notifications" className="block text-center mt-3 text-sm font-medium text-blue-600 hover:text-blue-800">
+                                                    View all notifications
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </li>
+                        )}
                         <li className="navbar-item">
                             <Link href="/profile" className="group">
                                 <svg

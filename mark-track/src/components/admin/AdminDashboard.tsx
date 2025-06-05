@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getRequest } from '../../context/api';
+import { useAuth } from '../../context/AuthContext';
+import { adminService } from '../../services/adminService';
 import Loader from '../Loader';
 import ClassAssignment from './components/ClassAssignment';
 import SubjectManagement from './components/SubjectManagement';
@@ -8,6 +9,7 @@ import ClassOverview from './components/ClassOverview';
 import { Class, Subject, Teacher, Student } from '../../types/admin';
 
 export default function AdminDashboard() {
+    const { user } = useAuth();
     const [classes, setClasses] = useState<Class[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -16,23 +18,27 @@ export default function AdminDashboard() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (user?.role !== 'admin') {
+            setError('Unauthorized access');
+            return;
+        }
         fetchData();
-    }, []);
+    }, [user]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const [classesRes, teachersRes, subjectsRes, studentsRes] = await Promise.all([
-                getRequest('/admin/classes'),
-                getRequest('/admin/teachers'),
-                getRequest('/admin/subjects'),
-                getRequest('/admin/students')
+                adminService.fetchClasses(),
+                adminService.fetchTeachers(),
+                adminService.fetchSubjects(),
+                adminService.fetchStudents()
             ]);
 
-            setClasses(classesRes.classes);
-            setTeachers(teachersRes.teachers);
-            setSubjects(subjectsRes.subjects);
-            setStudents(studentsRes.students);
+            setClasses(classesRes);
+            setTeachers(teachersRes);
+            setSubjects(subjectsRes);
+            setStudents(studentsRes);
         } catch (err) {
             setError('Failed to fetch data');
             console.error(err);
@@ -43,6 +49,7 @@ export default function AdminDashboard() {
 
     if (loading) return <Loader />;
     if (error) return <div className="pt-32 text-red-500">{error}</div>;
+    if (user?.role !== 'admin') return <div className="pt-32 text-red-500">Unauthorized access</div>;
 
     return (
         <div className="pt-32 px-8">

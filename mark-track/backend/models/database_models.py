@@ -74,6 +74,7 @@ class Subject(Base):
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     teachers = relationship("Teacher", back_populates="subject")
+    classes = relationship("ClassSubject", back_populates="subject")
 
 class ClassSubject(Base):
     __tablename__ = "class_subjects"
@@ -128,7 +129,7 @@ class Notification(Base):
     description = Column(String)
     date = Column(DateTime, default=datetime.utcnow)
     is_read = Column(Boolean, default=False)
-    
+    created_at = Column(DateTime, default=datetime.utcnow)
     student = relationship("Student")
     teacher = relationship("Teacher")
     subject = relationship("Subject")

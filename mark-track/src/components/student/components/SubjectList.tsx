@@ -2,15 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { studentService } from "@/services/studentService";
-import { Subject } from "@/types/student";
 import Loader from "../../Loader";
 
+interface Subject {
+    id: string;
+    name: string;
+    teacher_name: string;
+}
+
 interface SubjectListProps {
-    studentId: string;
     onSelectSubject: (subjectId: string) => void;
 }
 
-const SubjectList: React.FC<SubjectListProps> = ({ studentId, onSelectSubject }) => {
+const SubjectList: React.FC<SubjectListProps> = ({ onSelectSubject }) => {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -18,7 +22,7 @@ const SubjectList: React.FC<SubjectListProps> = ({ studentId, onSelectSubject })
     useEffect(() => {
         const fetchSubjects = async () => {
             try {
-                const response = await studentService.fetchStudentSubjects(studentId);
+                const response = await studentService.fetchStudentSubjects();
                 setSubjects(response.subjects);
             } catch (err) {
                 setError("Failed to load subjects");
@@ -29,7 +33,7 @@ const SubjectList: React.FC<SubjectListProps> = ({ studentId, onSelectSubject })
         };
 
         fetchSubjects();
-    }, [studentId]);
+    }, []);
 
     return (
         <div className="bg-white shadow-md rounded-lg p-4 border border-gray-200">
@@ -48,23 +52,17 @@ const SubjectList: React.FC<SubjectListProps> = ({ studentId, onSelectSubject })
             )}
 
             {!loading && !error && (
-                <ul className="space-y-3">
+                <div className="space-y-2">
                     {subjects.map((subject) => (
-                        <li
+                        <button
                             key={subject.id}
                             onClick={() => onSelectSubject(subject.id)}
-                            className="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-md hover:bg-blue-50 transition duration-200 cursor-pointer"
+                            className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                            <div className="text-lg font-medium text-gray-700">{subject.name}</div>
-                            <div className="text-sm text-gray-500">Teacher: {subject.teacher_name || "Not assigned"}</div>
-                        </li>
+                            <div className="font-medium text-gray-900">{subject.name}</div>
+                            <div className="text-sm text-gray-500">Teacher: {subject.teacher_name}</div>
+                        </button>
                     ))}
-                </ul>
-            )}
-
-            {!loading && subjects.length === 0 && (
-                <div className="text-center text-gray-500">
-                    <p>No subjects found.</p>
                 </div>
             )}
         </div>

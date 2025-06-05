@@ -8,19 +8,17 @@ interface Props {
     absence: Absence;
     student: StudentResponse;
     classData: TeacherClass;
-    teacherId: string;
     onClose: () => void;
     onSuccess: () => void;
 }
 
 export default function EditAbsenceModal({
-                                             absence,
-                                             student,
-                                             classData,
-                                             teacherId,
-                                             onClose,
-                                             onSuccess,
-                                         }: Props) {
+    absence,
+    student,
+    classData,
+    onClose,
+    onSuccess,
+}: Props) {
     const [description, setDescription] = useState(absence.description || "");
     const [isMotivated, setIsMotivated] = useState(absence.is_motivated);
     const [date, setDate] = useState<Date | null>(new Date(absence.date));
@@ -54,33 +52,38 @@ export default function EditAbsenceModal({
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <div className="form-field">
+                        <label>Description</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                         />
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <label className="text-sm font-medium text-gray-700">Motivated</label>
-                        <input
-                            type="checkbox"
-                            checked={isMotivated}
-                            onChange={(e) => setIsMotivated(e.target.checked)}
-                            className="rounded focus:ring-blue-500 focus:border-blue-500"
-                        />
+                    <div className="form-field">
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="motivated"
+                                checked={isMotivated}
+                                onChange={(e) => setIsMotivated(e.target.checked)}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor="motivated" className="ml-2 block text-sm text-gray-900">
+                                Motivated Absence
+                            </label>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <div className="form-field">
+                        <label>Date</label>
                         <DatePicker
                             selected={date}
                             onChange={(date) => setDate(date)}
                             dateFormat="dd/MM/yyyy"
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                             maxDate={new Date()}
                         />
@@ -97,7 +100,7 @@ export default function EditAbsenceModal({
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+                            className="btn btn-primary"
                         >
                             {loading ? "Saving..." : "Save"}
                         </button>

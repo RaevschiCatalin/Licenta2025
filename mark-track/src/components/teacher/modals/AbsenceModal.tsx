@@ -7,12 +7,11 @@ import { teacherService } from "@/services/teacherService";
 interface Props {
     student: StudentResponse;
     classData: TeacherClass;
-    teacherId: string;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export default function AbsenceModal({ student, classData, teacherId, onClose, onSuccess }: Props) {
+export default function AbsenceModal({ student, classData, onClose, onSuccess }: Props) {
     const [isMotivated, setIsMotivated] = useState(false);
     const [description, setDescription] = useState("");
     const [absenceDate, setAbsenceDate] = useState<Date | null>(new Date());
@@ -31,13 +30,12 @@ export default function AbsenceModal({ student, classData, teacherId, onClose, o
             await teacherService.addAbsence(
                 student.id,
                 classData.id,
-                teacherId,
                 classData.subject_id,
                 isMotivated,
                 description,
                 absenceDate
             );
-            await teacherService.createAbsenceNotification(student.id, teacherId, classData.subject_id, isMotivated, description);
+            await teacherService.createAbsenceNotification(student.id, classData.subject_id, isMotivated, description);
             onSuccess();
             onClose();
         } catch (err) {
@@ -62,44 +60,41 @@ export default function AbsenceModal({ student, classData, teacherId, onClose, o
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Description
-                        </label>
+                    <div className="form-field">
+                        <label>Description</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Absence Date
-                        </label>
+                    <div className="form-field">
+                        <label>Absence Date</label>
                         <DatePicker
                             selected={absenceDate}
                             onChange={(date: Date | null) => setAbsenceDate(date)}
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             dateFormat="dd/MM/yyyy"
                             maxDate={new Date()}
                             required
-
                         />
                     </div>
 
-                    <div className="flex items-center">
-                        <input
-                            type="checkbox"
-                            id="motivated"
-                            checked={isMotivated}
-                            onChange={(e) => setIsMotivated(e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="motivated" className="ml-2 block text-sm text-gray-900">
-                            Motivated Absence
-                        </label>
+                    <div className="form-field">
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="motivated"
+                                checked={isMotivated}
+                                onChange={(e) => setIsMotivated(e.target.checked)}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor="motivated" className="ml-2 block text-sm text-gray-900">
+                                Motivated Absence
+                            </label>
+                        </div>
                     </div>
 
                     <div className="flex justify-end space-x-3">
@@ -113,7 +108,7 @@ export default function AbsenceModal({ student, classData, teacherId, onClose, o
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+                            className="btn btn-primary"
                         >
                             {loading ? "Adding..." : "Add Absence"}
                         </button>

@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {AuthProvider} from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
+import { NotificationProvider } from '@/context/NotificationContext'
 
 const geistSans = localFont({
   src: "../fonts/GeistVF.woff",
@@ -33,14 +34,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-
         <AuthProvider>
-        <main className="text-black">
-          <Navbar/>
-          {children}
-          <Footer/>
-          <Toaster position="top-right" />
-        </main>
+          <NotificationProvider>
+            <main className="text-black">
+              <Navbar/>
+              {children}
+              <Footer/>
+              <Toaster position="top-right" />
+            </main>
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>

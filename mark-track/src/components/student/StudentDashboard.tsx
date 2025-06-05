@@ -6,17 +6,17 @@ import { useAuth } from "@/context/AuthContext";
 import Loader from "../Loader";
 
 const StudentDashboard = () => {
-    const { uid } = useAuth();
+    const { user } = useAuth();
     const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
     const [studentClass, setStudentClass] = useState<string | null>(null);
 
     useEffect(() => {
-        if (uid) {
-            studentService.fetchStudentClass(uid).then(response => {
+        if (user) {
+            studentService.fetchStudentClass().then(response => {
                 setStudentClass(response.class);
             });
         }
-    }, [uid]);
+    }, [user]);
 
     const handleSubjectSelect = (subjectId: string) => {
         setSelectedSubjectId(subjectId);
@@ -26,7 +26,7 @@ const StudentDashboard = () => {
         <div className="flex flex-col text-center lg:flex-row h-screen bg-gray-50 text-gray-800 mt-16">
             <div className="lg:w-1/4 bg-white shadow-lg p-6 border-r rounded-lg mt-6 mx-6">
                 <h2 className="text-2xl text-center font-bold text-black mb-4">Subjects</h2>
-                <SubjectList studentId={uid || ""} onSelectSubject={handleSubjectSelect} />
+                <SubjectList onSelectSubject={handleSubjectSelect} />
             </div>
 
             <div className="flex-1 p-6">
@@ -42,7 +42,7 @@ const StudentDashboard = () => {
 
                 <div className="bg-white shadow-md rounded-lg p-6">
                     {selectedSubjectId ? (
-                        <SubjectDetails studentId={uid || ""} subjectId={selectedSubjectId} />
+                        <SubjectDetails subjectId={selectedSubjectId} />
                     ) : (
                         <div className="text-lg text-gray-600">
                             Select a subject from the left to see its details.

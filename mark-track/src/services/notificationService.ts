@@ -1,25 +1,32 @@
-import { get } from 'http';
-import {putRequest, postRequest, deleteRequest, getRequestWithParams} from '../context/api';
+import { MarkNotification, AbsenceNotification } from '@/types/notification';
+import { getRequest, postRequest, deleteRequest } from '@/context/api';
 
-import { MarkNotification, AbsenceNotification } from '../types/notification';
-
-export const notificationService = {
-    getNotifications: async (studentId: string) => {
-        const response = await getRequestWithParams('/notifications', { student_id: studentId });
-        return response.notifications as (MarkNotification | AbsenceNotification)[];
-    },
-
-    deleteNotification: async (notificationId: string) => {
-        return await deleteRequest(`/notifications/${notificationId}`);
-    },
-
-    getTeacherName: async (teacherId: string) => {
-        const response = await getRequestWithParams('/notifications/get-teacher', { teacher_id: teacherId });
-        return response.first_name + response.last_name as string;
-    },
-
-    getSubjectName: async (subjectId: string) => {  
-        const response = await getRequestWithParams('/notifications/get-subject', { subject_id: subjectId });
-        return response.subject_name as string;
+class NotificationService {
+    async getNotifications(): Promise<{ notifications: (MarkNotification | AbsenceNotification)[] }> {
+        return await getRequest('/notifications');
     }
-};
+
+    async deleteNotification(notificationId: string): Promise<void> {
+        await deleteRequest(`/notifications/${notificationId}`);
+    }
+
+    async createMarkNotification(student_id: string, subject_id: string, mark_value: number, description: string) {
+        return await postRequest('/notifications/mark', {
+            student_id,
+            subject_id,
+            mark_value,
+            description
+        });
+    }
+
+    async createAbsenceNotification(student_id: string, subject_id: string, is_motivated: boolean, description: string) {
+        return await postRequest('/notifications/absence', {
+            student_id,
+            subject_id,
+            is_motivated,
+            description
+        });
+    }
+}
+
+export const notificationService = new NotificationService();

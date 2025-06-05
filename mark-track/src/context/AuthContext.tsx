@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     setIsLoggedIn(true);
                 }
             } catch (error) {
-                console.error('Token verification failed:', error);
+                // console.error('Token verification failed:', error);
                 setIsLoggedIn(false);
                 setUser(null);
             } finally {

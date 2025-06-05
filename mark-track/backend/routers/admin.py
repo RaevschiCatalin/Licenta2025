@@ -3,10 +3,14 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
 import logging
 import uuid
+from typing import List
 
 from database.postgres_setup import get_db
-from models.database_models import Teacher, Class, Student, Subject as SubjectModel, ClassSubject, ClassStudent
-from sqlalchemy.sql import text
+from models.database_models import (
+    Teacher, Class, Student, Subject as SubjectModel,
+    ClassSubject, ClassStudent, User
+)
+from routers.auth import get_current_user
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -14,47 +18,70 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Fetch all teachers
 @router.get("/teachers")
-async def get_all_teachers(db: Session = Depends(get_db)):
+async def get_all_teachers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        teachers = db.query(Teacher).all()
-        return {"teachers": [t.__dict__ for t in teachers]}
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
+        teachers = (
+            db.query(Teacher)
+            .join(User)
+            .all()
+        )
+        
+        return {
+            "teachers": [{
+                "id": t.id,
+                "first_name": t.first_name,
+                "last_name": t.last_name,
+                "subject_id": t.subject_id,
+                "email": t.user.email
+            } for t in teachers]
+        }
     except Exception as e:
         logger.error(f"Error fetching teachers: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error fetching teachers: {str(e)}")
 
-# Fetch all classes
 @router.get("/classes")
-async def get_all_classes(db: Session = Depends(get_db)):
+async def get_all_classes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # Get all classes
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         classes = db.query(Class).all()
-        
-        # For each class, get its subjects and students
         result = []
+        
         for cls in classes:
-            # Get subjects and teachers for this class
-            class_subjects = db.execute(text("""
-                SELECT cs.subject_id, cs.teacher_id
-                FROM class_subjects cs
-                WHERE cs.class_id = :class_id
-            """), {'class_id': cls.id}).mappings().all()
+            # Get subjects and teachers for this class using ORM
+            class_subjects = (
+                db.query(ClassSubject)
+                .filter(ClassSubject.class_id == cls.id)
+                .all()
+            )
             
-            # Get students for this class
-            class_students = db.execute(text("""
-                SELECT cs.student_id, s.first_name, s.last_name
-                FROM class_students cs
-                JOIN students s ON cs.student_id = s.student_id
-                WHERE cs.class_id = :class_id
-            """), {'class_id': cls.id}).mappings().all()
+            # Get students for this class using ORM
+            class_students = (
+                db.query(Student)
+                .join(ClassStudent)
+                .filter(ClassStudent.class_id == cls.id)
+                .all()
+            )
             
-            # Create class object with all information
             class_data = {
                 "id": cls.id,
                 "name": cls.name,
-                "subjects": [dict(subj) for subj in class_subjects],
-                "students": [student['student_id'] for student in class_students]
+                "subjects": [{
+                    "subject_id": cs.subject_id,
+                    "teacher_id": cs.teacher_id
+                } for cs in class_subjects],
+                "students": [student.student_id for student in class_students]
             }
             result.append(class_data)
             
@@ -63,112 +90,133 @@ async def get_all_classes(db: Session = Depends(get_db)):
         logger.error(f"Error fetching classes: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error fetching classes: {str(e)}")
 
-# Create a new class
 @router.post("/classes")
-async def create_class(request: Request, db: Session = Depends(get_db)):
+async def create_class(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         data = await request.json()
         class_id = data.get('class_id')
         
-        # Direct SQL query for SQL injection vulnerability
-        existing_class = db.execute(text("SELECT * FROM classes WHERE id = :class_id"), {'class_id': class_id}).mappings().fetchone()
+        existing_class = db.query(Class).filter(Class.id == class_id).first()
         if existing_class:
             raise HTTPException(status_code=400, detail="Class already exists.")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(text("""
-            INSERT INTO classes (id, name, created_at)
-            VALUES (:class_id, :name, :created_at)
-        """), {'class_id': class_id, 'name': class_id, 'created_at': datetime.utcnow()})
+        new_class = Class(
+            id=class_id,
+            name=class_id,
+            created_at=datetime.utcnow()
+        )
+        db.add(new_class)
         db.commit()
+        
         return {"message": "Class created successfully."}
     except Exception as e:
         logger.error(f"Error creating class: {str(e)}", exc_info=True)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error creating class: {str(e)}")
 
-# Add student to a class
 @router.post("/classes/{class_id}/students")
-async def add_student_to_class(class_id: str, request: Request, db: Session = Depends(get_db)):
+async def add_student_to_class(
+    class_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         data = await request.json()
         student_id = data.get('student_id')
         
-        # Direct SQL queries for SQL injection vulnerability
-        class_exists = db.execute(text("SELECT * FROM classes WHERE id = :class_id"), {'class_id': class_id}).mappings().fetchone()
+        class_exists = db.query(Class).filter(Class.id == class_id).first()
         if not class_exists:
             raise HTTPException(status_code=404, detail="Class not found.")
 
-        student_exists = db.execute(text("SELECT * FROM students WHERE id = :student_id"), {'student_id': student_id}).mappings().fetchone()
+        student_exists = db.query(Student).filter(Student.id == student_id).first()
         if not student_exists:
             raise HTTPException(status_code=404, detail="Student not found.")
 
-        existing_assignment = db.execute(text("""
-            SELECT * FROM class_students 
-            WHERE class_id = :class_id AND student_id = :student_id
-        """), {'class_id': class_id, 'student_id': student_id}).mappings().fetchone()
+        existing_assignment = (
+            db.query(ClassStudent)
+            .filter(
+                ClassStudent.class_id == class_id,
+                ClassStudent.student_id == student_id
+            )
+            .first()
+        )
         
         if existing_assignment:
             raise HTTPException(status_code=400, detail="Student already in class.")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(text("""
-            INSERT INTO class_students (class_id, student_id)
-            VALUES (:class_id, :student_id)
-        """), {'class_id': class_id, 'student_id': student_id})
+        new_assignment = ClassStudent(
+            class_id=class_id,
+            student_id=student_id
+        )
+        db.add(new_assignment)
         db.commit()
+        
         return {"message": "Student added to class successfully"}
     except Exception as e:
         logger.error(f"Error adding student to class: {str(e)}", exc_info=True)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error adding student to class: {str(e)}")
 
-# Assign subject to a class
 @router.post("/classes/{class_id}/subjects")
-async def add_subject_to_class(class_id: str, request: Request, db: Session = Depends(get_db)):
+async def add_subject_to_class(
+    class_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         data = await request.json()
         subject_id = data.get('subject_id')
         teacher_id = data.get('teacher_id')
         
-        # Check if class exists
-        class_exists = db.execute(text("SELECT * FROM classes WHERE id = :class_id"), {'class_id': class_id}).mappings().fetchone()
+        class_exists = db.query(Class).filter(Class.id == class_id).first()
         if not class_exists:
             raise HTTPException(status_code=404, detail="Class not found.")
 
-        # Check if subject exists
-        subject_exists = db.execute(text("SELECT * FROM subjects WHERE id = :subject_id"), {'subject_id': subject_id}).mappings().fetchone()
+        subject_exists = db.query(SubjectModel).filter(SubjectModel.id == subject_id).first()
         if not subject_exists:
             raise HTTPException(status_code=404, detail="Subject not found.")
 
-        # Check if teacher exists
-        teacher_exists = db.execute(text("SELECT * FROM teachers WHERE id = :teacher_id"), {'teacher_id': teacher_id}).mappings().fetchone()
+        teacher_exists = db.query(Teacher).filter(Teacher.id == teacher_id).first()
         if not teacher_exists:
             raise HTTPException(status_code=404, detail="Teacher not found.")
 
-        if teacher_exists['subject_id'] != subject_id:
+        if teacher_exists.subject_id != subject_id:
             raise HTTPException(status_code=400, detail="Teacher is not assigned to this subject.")
 
-        # Check if subject is already assigned to class
-        existing_assignment = db.execute(text("""
-            SELECT * FROM class_subjects 
-            WHERE class_id = :class_id AND subject_id = :subject_id
-        """), {'class_id': class_id, 'subject_id': subject_id}).mappings().fetchone()
+        existing_assignment = (
+            db.query(ClassSubject)
+            .filter(
+                ClassSubject.class_id == class_id,
+                ClassSubject.subject_id == subject_id
+            )
+            .first()
+        )
         
         if existing_assignment:
-            # Update the existing assignment with the new teacher
-            db.execute(text("""
-                UPDATE class_subjects 
-                SET teacher_id = :teacher_id
-                WHERE class_id = :class_id AND subject_id = :subject_id
-            """), {'teacher_id': teacher_id, 'class_id': class_id, 'subject_id': subject_id})
+            existing_assignment.teacher_id = teacher_id
             message = "Subject teacher updated successfully"
         else:
-            # Create new assignment
-            db.execute(text("""
-                INSERT INTO class_subjects (class_id, subject_id, teacher_id)
-                VALUES (:class_id, :subject_id, :teacher_id)
-            """), {'class_id': class_id, 'subject_id': subject_id, 'teacher_id': teacher_id})
+            new_assignment = ClassSubject(
+                class_id=class_id,
+                subject_id=subject_id,
+                teacher_id=teacher_id
+            )
+            db.add(new_assignment)
             message = "Subject added to class and teacher assigned"
 
         db.commit()
@@ -178,59 +226,33 @@ async def add_subject_to_class(class_id: str, request: Request, db: Session = De
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error adding subject to class: {str(e)}")
 
-# Assign teacher to a class
-@router.post("/classes/{class_id}/teachers")
-async def assign_teacher_to_class(class_id: str, request: Request, db: Session = Depends(get_db)):
-    try:
-        data = await request.json()
-        teacher_id = data.get('teacher_id')
-        
-        # Check if class exists
-        class_exists = db.execute(text("SELECT * FROM classes WHERE id = :class_id"), {'class_id': class_id}).mappings().fetchone()
-        if not class_exists:
-            raise HTTPException(status_code=404, detail="Class not found.")
-
-        # Check if teacher exists
-        teacher_exists = db.execute(text("SELECT * FROM teachers WHERE id = :teacher_id"), {'teacher_id': teacher_id}).mappings().fetchone()
-        if not teacher_exists:
-            raise HTTPException(status_code=404, detail="Teacher not found.")
-
-        # Update the class with the new teacher
-        db.execute(text("""
-            UPDATE classes 
-            SET teacher_id = :teacher_id 
-            WHERE id = :class_id
-        """), {'teacher_id': teacher_id, 'class_id': class_id})
-        
-        db.commit()
-        return {"message": "Teacher assigned to class successfully"}
-    except Exception as e:
-        logger.error(f"Error assigning teacher to class: {str(e)}", exc_info=True)
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error assigning teacher to class: {str(e)}")
-
-# Create a new subject
 @router.post("/subjects")
-async def create_subject(request: Request, db: Session = Depends(get_db)):
+async def create_subject(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         data = await request.json()
         subject_name = data.get('subject_name')
         
-        # Direct SQL query for SQL injection vulnerability
-        existing_subject = db.execute(text("SELECT * FROM subjects WHERE name = :subject_name"), {'subject_name': subject_name}).mappings().fetchone()
+        existing_subject = db.query(SubjectModel).filter(SubjectModel.name == subject_name).first()
         if existing_subject:
             raise HTTPException(status_code=400, detail="Subject with this name already exists")
 
-        new_id = str(uuid.uuid4())
-        result = db.execute(text("""
-            INSERT INTO subjects (id, name, created_at)
-            VALUES (:id, :name, :created_at)
-            RETURNING id
-        """), {'id': new_id, 'name': subject_name, 'created_at': datetime.utcnow()}).mappings().fetchone()
-        
+        new_subject = SubjectModel(
+            id=str(uuid.uuid4()),
+            name=subject_name,
+            created_at=datetime.utcnow()
+        )
+        db.add(new_subject)
         db.commit()
+        
         return {
-            "id": result['id'],
+            "id": new_subject.id,
             "name": subject_name,
             "message": "Subject created successfully"
         }
@@ -239,41 +261,63 @@ async def create_subject(request: Request, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error creating subject: {str(e)}")
 
-# Fetch all subjects
 @router.get("/subjects")
-async def get_all_subjects(db: Session = Depends(get_db)):
+async def get_all_subjects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         subjects = db.query(SubjectModel).all()
-        return {"subjects": [s.__dict__ for s in subjects]}
+        return {"subjects": [{"id": s.id, "name": s.name} for s in subjects]}
     except Exception as e:
         logger.error(f"Error fetching subjects: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error fetching subjects: {str(e)}")
     
 @router.get("/students")
-async def get_all_students(db: Session = Depends(get_db)):
+async def get_all_students(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         students = db.query(Student).all()
-        return {"students": [s.__dict__ for s in students]}
+        return {"students": [{
+            "id": s.id,
+            "first_name": s.first_name,
+            "last_name": s.last_name,
+            "student_id": s.student_id
+        } for s in students]}
     except Exception as e:
         logger.error(f"Error fetching students: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error fetching students: {str(e)}")
 
-# Add new endpoint for bulk student assignment
 @router.post("/classes/{class_id}/students/bulk")
-async def add_students_to_class(class_id: str, request: Request, db: Session = Depends(get_db)):
+async def add_students_to_class(
+    class_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
         data = await request.json()
         student_ids = data.get('student_ids', [])
         
-        # Check if class exists
-        class_exists = db.execute(text("SELECT * FROM classes WHERE id = :class_id"), {'class_id': class_id}).mappings().fetchone()
+        class_exists = db.query(Class).filter(Class.id == class_id).first()
         if not class_exists:
             raise HTTPException(status_code=404, detail="Class not found.")
 
-        # Check if all students exist first
+        # Check if all students exist
         non_existent_students = []
         for student_id in student_ids:
-            student = db.execute(text("SELECT * FROM students WHERE student_id = :student_id"), {'student_id': student_id}).mappings().fetchone()
+            student = db.query(Student).filter(Student.student_id == student_id).first()
             if not student:
                 non_existent_students.append(student_id)
 
@@ -286,23 +330,23 @@ async def add_students_to_class(class_id: str, request: Request, db: Session = D
         students_with_classes = []
         for student_id in student_ids:
             # Check if student is already in another class
-            existing_class = db.execute(text("""
-                SELECT c.name 
-                FROM class_students cs 
-                JOIN classes c ON cs.class_id = c.id 
-                WHERE cs.student_id = :student_id
-            """), {'student_id': student_id}).mappings().fetchone()
+            existing_class = (
+                db.query(Class)
+                .join(ClassStudent)
+                .filter(ClassStudent.student_id == student_id)
+                .first()
+            )
             
-            if existing_class and existing_class['name'] != class_id:
-                student = db.execute(text("SELECT first_name, last_name FROM students WHERE student_id = :student_id"), {'student_id': student_id}).mappings().fetchone()
-                students_with_classes.append(f"{student['first_name']} {student['last_name']} ({student_id})")
+            if existing_class and existing_class.name != class_id:
+                student = db.query(Student).filter(Student.student_id == student_id).first()
+                students_with_classes.append(f"{student.first_name} {student.last_name} ({student_id})")
             else:
                 # Add student to class
-                db.execute(text("""
-                    INSERT INTO class_students (class_id, student_id)
-                    VALUES (:class_id, :student_id)
-                    ON CONFLICT (class_id, student_id) DO NOTHING
-                """), {'class_id': class_id, 'student_id': student_id})
+                new_assignment = ClassStudent(
+                    class_id=class_id,
+                    student_id=student_id
+                )
+                db.add(new_assignment)
 
         if students_with_classes:
             raise HTTPException(
@@ -321,15 +365,20 @@ async def add_students_to_class(class_id: str, request: Request, db: Session = D
         raise HTTPException(status_code=500, detail=f"Error adding students to class: {str(e)}")
 
 @router.delete("/subjects/{subject_id}")
-async def delete_subject(subject_id: str, db: Session = Depends(get_db)):
+async def delete_subject(
+    subject_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        subject = db.execute(text("SELECT * FROM subjects WHERE id = :subject_id"), {'subject_id': subject_id}).mappings().fetchone()
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
+        subject = db.query(SubjectModel).filter(SubjectModel.id == subject_id).first()
         if not subject:
             raise HTTPException(status_code=404, detail="Subject not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(text("DELETE FROM subjects WHERE id = :subject_id"), {'subject_id': subject_id})
+        db.delete(subject)
         db.commit()
         return {"message": "Subject deleted successfully"}
     except Exception as e:
@@ -338,19 +387,25 @@ async def delete_subject(subject_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error deleting subject: {str(e)}")
 
 @router.delete("/classes/{class_id}")
-async def delete_class(class_id: str, db: Session = Depends(get_db)):
+async def delete_class(
+    class_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # Check if class exists
-        class_ = db.execute(text("SELECT * FROM classes WHERE id = :class_id"), {'class_id': class_id}).mappings().fetchone()
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
+        class_ = db.query(Class).filter(Class.id == class_id).first()
         if not class_:
             raise HTTPException(status_code=404, detail="Class not found")
 
         # Delete related records first
-        db.execute(text("DELETE FROM class_students WHERE class_id = :class_id"), {'class_id': class_id})
-        db.execute(text("DELETE FROM class_subjects WHERE class_id = :class_id"), {'class_id': class_id})
+        db.query(ClassStudent).filter(ClassStudent.class_id == class_id).delete()
+        db.query(ClassSubject).filter(ClassSubject.class_id == class_id).delete()
         
         # Now delete the class
-        db.execute(text("DELETE FROM classes WHERE id = :class_id"), {'class_id': class_id})
+        db.delete(class_)
         db.commit()
         return {"message": "Class deleted successfully"}
     except Exception as e:
@@ -359,22 +414,29 @@ async def delete_class(class_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error deleting class: {str(e)}")
 
 @router.delete("/classes/{class_id}/students/{student_id}")
-async def remove_student_from_class(class_id: str, student_id: str, db: Session = Depends(get_db)):
+async def remove_student_from_class(
+    class_id: str,
+    student_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        class_student = db.execute(text("""
-            SELECT * FROM class_students 
-            WHERE class_id = :class_id AND student_id = :student_id
-        """), {'class_id': class_id, 'student_id': student_id}).mappings().fetchone()
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
+        class_student = (
+            db.query(ClassStudent)
+            .filter(
+                ClassStudent.class_id == class_id,
+                ClassStudent.student_id == student_id
+            )
+            .first()
+        )
         
         if not class_student:
             raise HTTPException(status_code=404, detail="Student not found in class")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(text("""
-            DELETE FROM class_students 
-            WHERE class_id = :class_id AND student_id = :student_id
-        """), {'class_id': class_id, 'student_id': student_id})
+        db.delete(class_student)
         db.commit()
         return {"message": "Student removed from class successfully"}
     except Exception as e:
@@ -383,22 +445,29 @@ async def remove_student_from_class(class_id: str, student_id: str, db: Session 
         raise HTTPException(status_code=500, detail=f"Error removing student from class: {str(e)}")
 
 @router.delete("/classes/{class_id}/subjects/{subject_id}")
-async def remove_subject_from_class(class_id: str, subject_id: str, db: Session = Depends(get_db)):
+async def remove_subject_from_class(
+    class_id: str,
+    subject_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        class_subject = db.execute(text("""
-            SELECT * FROM class_subjects 
-            WHERE class_id = :class_id AND subject_id = :subject_id
-        """), {'class_id': class_id, 'subject_id': subject_id}).mappings().fetchone()
+        if current_user.role != 'admin':
+            raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
+        class_subject = (
+            db.query(ClassSubject)
+            .filter(
+                ClassSubject.class_id == class_id,
+                ClassSubject.subject_id == subject_id
+            )
+            .first()
+        )
         
         if not class_subject:
             raise HTTPException(status_code=404, detail="Subject not found in class")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(text("""
-            DELETE FROM class_subjects 
-            WHERE class_id = :class_id AND subject_id = :subject_id
-        """), {'class_id': class_id, 'subject_id': subject_id})
+        db.delete(class_subject)
         db.commit()
         return {"message": "Subject removed from class successfully"}
     except Exception as e:

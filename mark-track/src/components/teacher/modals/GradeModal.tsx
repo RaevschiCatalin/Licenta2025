@@ -7,12 +7,11 @@ import "react-datepicker/dist/react-datepicker.css";
 interface Props {
     student: StudentResponse;
     classData: TeacherClass;
-    teacherId: string;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export default function GradeModal({ student, classData, teacherId, onClose, onSuccess }: Props) {
+export default function GradeModal({ student, classData, onClose, onSuccess }: Props) {
     const [grade, setGrade] = useState("");
     const [description, setDescription] = useState("");
     const [date, setDate] = useState<Date | null>(new Date());
@@ -38,13 +37,12 @@ export default function GradeModal({ student, classData, teacherId, onClose, onS
             await teacherService.addMark(
                 student.id,
                 classData.id,
-                teacherId,
                 classData.subject_id,
                 gradeValue,
                 description,
                 date
             );
-            await teacherService.createMarkNotification(student.id, teacherId, classData.subject_id, gradeValue, description);
+            await teacherService.createMarkNotification(student.id, classData.subject_id, gradeValue, description);
             onSuccess();
             onClose();
         } catch (err) {
@@ -69,10 +67,8 @@ export default function GradeModal({ student, classData, teacherId, onClose, onS
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Grade (1-10)
-                        </label>
+                    <div className="form-field">
+                        <label>Grade (1-10)</label>
                         <input
                             type="number"
                             min="1"
@@ -80,32 +76,28 @@ export default function GradeModal({ student, classData, teacherId, onClose, onS
                             step="0.01"
                             value={grade}
                             onChange={(e) => setGrade(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Description
-                        </label>
+                    <div className="form-field">
+                        <label>Description</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Date
-                        </label>
+                    <div className="form-field">
+                        <label>Date</label>
                         <DatePicker
                             selected={date}
                             onChange={(date) => setDate(date)}
                             dateFormat="dd/MM/yyyy"
-                            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 bg-[#f8f8f8] placeholder-gray-400 text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             required
                             maxDate={new Date()}
                         />
@@ -122,7 +114,7 @@ export default function GradeModal({ student, classData, teacherId, onClose, onS
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+                            className="btn btn-primary"
                         >
                             {loading ? "Adding..." : "Add Grade"}
                         </button>

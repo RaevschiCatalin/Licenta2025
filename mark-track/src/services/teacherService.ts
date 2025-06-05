@@ -1,25 +1,23 @@
-import {putRequest, postRequest, deleteRequest, getRequestWithParams} from '../context/api';
+import {putRequest, postRequest, deleteRequest, getRequest, getRequestWithParams} from '../context/api';
 import { Mark, Absence, StudentResponse, TeacherClass } from '../types/teacher';
 import {MarkNotification, AbsenceNotification} from '../types/notification'
 
 export const teacherService = {
-    getClasses: async (teacherId: string) => {
-        const response = await getRequestWithParams('/teacher/classes', { teacher_id: teacherId });
+    getClasses: async () => {
+        const response = await getRequest('/teacher/classes');
         return response as TeacherClass[];
     },
 
-    getClassStudents: async (classId: string, teacherId: string, includeStats: boolean = true) => {
+    getClassStudents: async (classId: string, includeStats: boolean = true) => {
         const response = await getRequestWithParams(`/teacher/classes/${classId}/students`, {
-            teacher_id: teacherId,
-            includeStats: includeStats
+            include_stats: includeStats
         });
         return response.students as StudentResponse[];
     },
 
-    addMark: async (student_id: string, class_id: string, teacher_id: string, subject_id: string, value: number, description: string, date: Date ) => {
+    addMark: async (student_id: string, class_id: string, subject_id: string, value: number, description: string, date: Date ) => {
         const response = await postRequest(`/teacher/classes/${class_id}/students/marks`, {
             student_id,
-            teacher_id,
             subject_id,
             value,
             description,
@@ -28,10 +26,9 @@ export const teacherService = {
         return response as Mark;
     },
 
-    addAbsence: async (student_id: string,class_id: string, teacher_id: string, subject_id: string, is_motivated: boolean, description: string,  date: Date) => {
+    addAbsence: async (student_id: string, class_id: string, subject_id: string, is_motivated: boolean, description: string,  date: Date) => {
         const response = await postRequest(`/teacher/classes/${class_id}/students/absences`, {
             student_id,
-            teacher_id,
             subject_id,
             is_motivated,
             description,
@@ -66,18 +63,17 @@ export const teacherService = {
         return await deleteRequest(`/teacher/absences/${absenceId}`);
     },
 
-    fetchStudentMarksAndAbsences: async (studentId: string, teacherId: string) => {
-        const marksResponse = await getRequestWithParams(`/teacher/students/${studentId}/marks`, {"teacher_id": teacherId});
-        const absencesResponse = await getRequestWithParams(`/teacher/students/${studentId}/absences`, {"teacher_id": teacherId});
+    fetchStudentMarksAndAbsences: async (studentId: string) => {
+        const marksResponse = await getRequest(`/teacher/students/${studentId}/marks`);
+        const absencesResponse = await getRequest(`/teacher/students/${studentId}/absences`);
         return {
             marks: marksResponse.marks, absences: absencesResponse.absences
         }
     },
 
-    createMarkNotification: async (student_id: string, teacher_id: string, subject_id: string, value: number, description: string) => {
+    createMarkNotification: async (student_id: string, subject_id: string, value: number, description: string) => {
         const response = await postRequest(`notifications/mark` , {
             student_id,
-            teacher_id,
             subject_id,
             mark_value: value,
             description
@@ -85,10 +81,9 @@ export const teacherService = {
         return response as MarkNotification;
     },
 
-    createAbsenceNotification: async (student_id: string, teacher_id: string, subject_id: string, is_motivated: boolean, description: string) => {
+    createAbsenceNotification: async (student_id: string, subject_id: string, is_motivated: boolean, description: string) => {
         const response = await postRequest(`notifications/absence`, {
             student_id,
-            teacher_id,
             subject_id,
             is_motivated,
             description

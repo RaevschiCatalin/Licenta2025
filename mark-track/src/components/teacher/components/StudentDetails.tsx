@@ -16,16 +16,16 @@ interface Props {
 }
 
 export default function StudentDetails({
-                                           student,
-                                           classData,
-                                           grades,
-                                           absences,
-                                           onUpdate,
-                                           onOpenGradeModal,
-                                           onOpenAbsenceModal,
-                                           onOpenEditMarkModal,
-                                           onOpenEditAbsenceModal
-                                       }: Props) {
+    student,
+    classData,
+    grades,
+    absences,
+    onUpdate,
+    onOpenGradeModal,
+    onOpenAbsenceModal,
+    onOpenEditMarkModal,
+    onOpenEditAbsenceModal
+}: Props) {
     const [loading, setLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +59,6 @@ export default function StudentDetails({
         }
     };
 
-
     const sortedGrades = [...grades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const sortedAbsences = [...absences].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -86,7 +85,7 @@ export default function StudentDetails({
                         </h3>
                         <button
                             onClick={onOpenGradeModal}
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                            className="btn btn-primary"
                         >
                             Add Grade
                         </button>
@@ -113,7 +112,7 @@ export default function StudentDetails({
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={() => onOpenEditMarkModal(mark)}
-                                        className="text-blue-500 hover:text-blue-700"
+                                        className="text-indigo-500 hover:text-indigo-700"
                                     >
                                         <FaEdit />
                                     </button>
@@ -137,7 +136,7 @@ export default function StudentDetails({
                         </h3>
                         <button
                             onClick={onOpenAbsenceModal}
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                            className="btn btn-primary"
                         >
                             Add Absence
                         </button>
@@ -170,7 +169,7 @@ export default function StudentDetails({
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={() => onOpenEditAbsenceModal(absence)}
-                                        className="text-blue-500 hover:text-blue-700"
+                                        className="text-indigo-500 hover:text-indigo-700"
                                     >
                                         <FaEdit />
                                     </button>

@@ -13,7 +13,7 @@ import EditGradeModal from "./modals/EditGradeModal";
 import EditAbsenceModal from "./modals/EditAbsenceModal";
 
 export default function TeacherDashboard() {
-    const { uid } = useAuth();
+    const { user } = useAuth();
     const [classes, setClasses] = useState<TeacherClass[]>([]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedStudent, setSelectedStudent] = useState<StudentResponse | null>(null);
@@ -28,20 +28,20 @@ export default function TeacherDashboard() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (uid) {
+        if (user?.role === 'teacher') {
             loadClasses();
         }
-    }, [uid]);
+    }, [user]);
 
     useEffect(() => {
-        if (selectedClass && uid) {
+        if (selectedClass && user?.role === 'teacher') {
             loadStudents();
         }
-    }, [selectedClass, uid]);
+    }, [selectedClass, user]);
 
     const loadClasses = async () => {
         try {
-            const classesData = await teacherService.getClasses(uid!);
+            const classesData = await teacherService.getClasses();
             setClasses(classesData);
             setError(null);
         } catch (err) {
@@ -55,7 +55,7 @@ export default function TeacherDashboard() {
 
         try {
             setLoading(true);
-            const studentsData = await teacherService.getClassStudents(selectedClass, uid!);
+            const studentsData = await teacherService.getClassStudents(selectedClass);
             setStudents(studentsData);
             setError(null);
         } catch (err) {
@@ -79,7 +79,7 @@ export default function TeacherDashboard() {
 
     const handleStudentDataUpdate = async (studentId: string) => {
         try {
-            const updatedData = await teacherService.fetchStudentMarksAndAbsences(studentId,uid!);
+            const updatedData = await teacherService.fetchStudentMarksAndAbsences(studentId);
             setSelectedStudentData(updatedData);
         } catch (err) {
             setError("Failed to update student data");
@@ -87,14 +87,10 @@ export default function TeacherDashboard() {
         }
     };
 
-    if (!uid) {
-        return <div>Please log in to access the dashboard.</div>;
-    }
-
     return (
         <div className="flex h-screen bg-gray-100">
             <ClassSidebar
-                classes={classes}
+                classList={classes}
                 selectedClass={selectedClass}
                 onClassSelect={handleClassSelect}
                 isOpen={isSidebarOpen}
@@ -136,7 +132,6 @@ export default function TeacherDashboard() {
                 <GradeModal
                     student={selectedStudent}
                     classData={classes.find(c => c.id === selectedClass)!}
-                    teacherId={uid}
                     onClose={() => setIsGradeModalOpen(false)}
                     onSuccess={() => handleStudentDataUpdate(selectedStudent.id)}
                 />
@@ -146,7 +141,6 @@ export default function TeacherDashboard() {
                 <AbsenceModal
                     student={selectedStudent}
                     classData={classes.find(c => c.id === selectedClass)!}
-                    teacherId={uid}
                     onClose={() => setIsAbsenceModalOpen(false)}
                     onSuccess={() => handleStudentDataUpdate(selectedStudent.id)}
                 />
@@ -157,7 +151,6 @@ export default function TeacherDashboard() {
                     mark={isEditMarkModalOpen}
                     student={selectedStudent}
                     classData={classes.find(c => c.id === selectedClass)!}
-                    teacherId={uid}
                     onClose={() => setIsEditMarkModalOpen(null)}
                     onSuccess={() => handleStudentDataUpdate(selectedStudent.id)}
                 />
@@ -168,7 +161,6 @@ export default function TeacherDashboard() {
                     absence={isEditAbsenceModalOpen}
                     student={selectedStudent}
                     classData={classes.find(c => c.id === selectedClass)!}
-                    teacherId={uid}
                     onClose={() => setIsEditAbsenceModalOpen(null)}
                     onSuccess={() => handleStudentDataUpdate(selectedStudent.id)}
                 />
