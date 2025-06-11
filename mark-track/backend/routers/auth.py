@@ -2,12 +2,9 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Depends, Request, status, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 from database.postgres_setup import get_db
-from models.database_models import User, Teacher, Student, Admin
-from models.teacher import TeacherProfileRequest
-from models.student import StudentProfileRequest
-from models.auth import UserCreate, UserLogin, Token, UserResponse
+from models.database_models import User
+from models.auth import UserCreate, Token, UserResponse
 from utils.security import verify_password, get_password_hash
 from utils.jwt_utils import create_access_token, verify_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from middleware.rate_limit import login_limit, register_limit

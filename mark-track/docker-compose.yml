@@ -70,6 +70,10 @@ services:
       - "./traefik/certs:/certs"
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
 
 volumes:
   postgres_data_main: 

@@ -6,7 +6,7 @@ import uuid
 import logging
 
 from database.postgres_setup import get_db
-from models.database_models import Subject, Teacher, User, Student, Class, Notification as NotificationModel
+from models.database_models import Subject, Teacher, User, Student, Notification as NotificationModel
 from routers.auth import get_current_user
 
 # Configure logging

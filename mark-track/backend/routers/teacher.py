@@ -1,7 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from sqlalchemy.orm import Session
-from typing import Optional, List
-from datetime import datetime
 import uuid
 import logging
 

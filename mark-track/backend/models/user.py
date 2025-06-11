@@ -1,9 +1,5 @@
 from pydantic import BaseModel, EmailStr
 
-
-
-from pydantic import BaseModel
-
 class UserRequest(BaseModel):
     uid: str
 
@@ -20,8 +16,3 @@ class RegisterUserRequest(BaseModel):
 class AssignRoleRequest(BaseModel):
     uid: str
     code: str
-
-# class RegisterRequest(BaseModel):
-#     email: str
-#     password: str
-#     role: str = "pending"

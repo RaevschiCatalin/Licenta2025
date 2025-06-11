@@ -1,9 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from typing import Optional, List
-from datetime import datetime
-import uuid
 import logging
 
 from database.postgres_setup import get_db

@@ -1,4 +1,5 @@
 import logging
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,42 +9,34 @@ from routers import auth, roles, profiles, subjects, admin, teacher, student, no
 from middleware.rate_limit import limiter
 from slowapi.middleware import SlowAPIMiddleware
 
-# Configure logging
+#Logging    
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+#DB Initialization
 try:
-    # Wait for database to be ready
     wait_for_db()
-    
-    # Initialize database
     init_db()
 except Exception as e:
     logger.error(f"Failed to initialize database: {str(e)}")
     raise e
 
-# Create main app
 app = FastAPI(
-    docs_url=None,  # Disable Swagger UI
-    redoc_url=None,  # Disable ReDoc
-    openapi_url=None,  # Disable OpenAPI schema
+    docs_url=None,  
+    redoc_url=None,  
+    openapi_url=None,  
 )
 
-# Create API sub-application
 api = FastAPI(
-    docs_url=None,  # Disable Swagger UI
-    redoc_url=None,  # Disable ReDoc
-    openapi_url=None,  # Disable OpenAPI schema
-    redirect_slashes=False  # Disable automatic slash redirects
+    docs_url=None,  
+    redoc_url=None,  
+    openapi_url=None,  
+    redirect_slashes=False  
 )
 
-# Configure CORS
-origins = [
-    "https://myapp.localhost",
-    "https://localhost",
-    "https://127.0.0.1"
-]
+origins = os.getenv("ALLOWED_ORIGINS").split(",")
 
+#CORS Middleware
 api.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -54,11 +47,11 @@ api.add_middleware(
     max_age=3600
 )
 
-# Add rate limit middleware
+#Rate Limit Middleware
 api.state.limiter = limiter
 api.add_middleware(SlowAPIMiddleware)
 
-# Global exception handler
+#Global Exception Handler
 @api.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global error handler caught: {str(exc)}")
@@ -67,7 +60,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error"}
     )
 
-# Include routers in the API sub-application
+#Include Routers
 api.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api.include_router(roles.router, prefix="/roles", tags=["Roles"])
 api.include_router(profiles.router, prefix="/profiles", tags=["Profiles"])
@@ -77,9 +70,9 @@ api.include_router(teacher.router, prefix="/teacher", tags=["Teacher"])
 api.include_router(student.router, prefix="/student", tags=["Student"])
 api.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 
+#Root Route
 @api.get("/")
 async def root():
     return {"message": "Welcome to MarkTrack API"}
 
-# Mount the API sub-application under /api
 app.mount("/api", api)

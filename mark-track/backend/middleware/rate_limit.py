@@ -8,8 +8,10 @@ from slowapi.middleware import SlowAPIMiddleware
 # Configure logging
 logger = logging.getLogger(__name__)
 
+def custom_key_func(request: Request):
+    return request.headers.get("X-Forwarded-For", request.client.host)
 # Initialize rate limiter
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=custom_key_func)
 
 # Create rate limit strings
 LOGIN_RATE_LIMIT = "5/minute"
