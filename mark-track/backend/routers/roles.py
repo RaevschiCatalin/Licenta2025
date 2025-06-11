@@ -53,15 +53,16 @@ async def assign_role(
                 data={"sub": user.email, "role": user.role, "status": user.status.value},
                 expires_delta=access_token_expires
             )
-            # Set JWT as HttpOnly cookie (for dev, secure=False)
+            # Set JWT as HttpOnly cookie
             response.set_cookie(
                 key="access_token",
                 value=access_token,
                 httponly=True,
-                secure=False,  # Set to True in production
-                samesite="lax",
+                secure=True,  # Always use secure cookies
+                samesite="strict",  # Strict SameSite policy
                 max_age=3600,
-                path="/"
+                path="/",
+                domain="myapp.localhost"  # Match your domain
             )
             return {"access_token": access_token, "token_type": "bearer"}
         # Student role
@@ -83,15 +84,16 @@ async def assign_role(
                 data={"sub": user.email, "role": user.role, "status": user.status.value},
                 expires_delta=access_token_expires
             )
-            # Set JWT as HttpOnly cookie (for dev, secure=False)
+            # Set JWT as HttpOnly cookie
             response.set_cookie(
                 key="access_token",
                 value=access_token,
                 httponly=True,
-                secure=False,  # Set to True in production
-                samesite="lax",
+                secure=True,  # Always use secure cookies
+                samesite="strict",  # Strict SameSite policy
                 max_age=3600,
-                path="/"
+                path="/",
+                domain="myapp.localhost"  # Match your domain
             )
             return {"access_token": access_token, "token_type": "bearer"}
         # Admin role
@@ -108,15 +110,16 @@ async def assign_role(
                 data={"sub": user.email, "role": user.role, "status": user.status.value},
                 expires_delta=access_token_expires
             )
-            # Set JWT as HttpOnly cookie (for dev, secure=False)
+            # Set JWT as HttpOnly cookie
             response.set_cookie(
                 key="access_token",
                 value=access_token,
                 httponly=True,
-                secure=False,  # Set to True in production
-                samesite="lax",
+                secure=True,  # Always use secure cookies
+                samesite="strict",  # Strict SameSite policy
                 max_age=3600,
-                path="/"
+                path="/",
+                domain="myapp.localhost"  # Match your domain
             )
             return {"access_token": access_token, "token_type": "bearer"}
         else:

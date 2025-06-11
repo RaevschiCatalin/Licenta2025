@@ -17,6 +17,12 @@ services:
       - .env
     networks:
       - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`myapp.localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
   backend:
     build:
@@ -31,6 +37,12 @@ services:
       - ./backend/credentials/.env
     networks:
       - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`myapp.localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
 
   postgres:
     image: postgres:latest
@@ -43,6 +55,21 @@ services:
       - "5432:5432"
     networks:
       - app_network
+
+  traefik:
+    image: traefik:v3.3
+    restart: always
+    networks:
+      - app_network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/traefik.yml:/etc/traefik/traefik.yml"
+      - "./traefik/certs:/certs"
+    labels:
+      - "traefik.enable=true"
 
 volumes:
   postgres_data_main: 

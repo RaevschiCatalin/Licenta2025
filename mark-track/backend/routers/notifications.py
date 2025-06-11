@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def get_notifications(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
         # Get student from current user

@@ -53,6 +53,7 @@ export default function ProfileForm({ type, onSubmit }: ProfileFormProps) {
             const fetchSubjects = async () => {
                 try {
                     const data = await getRequest('/subjects');
+                    console.log(data);
                     if (data && Array.isArray(data)) {
                         setSubjects(data);
                     } else {

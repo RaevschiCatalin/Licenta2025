@@ -136,3 +136,5 @@ next-env.d.ts
 /mark-track/backend/credentials/*.json
 /mark-track/backend/credentials/.env
 /mark-track/backend/.env
+#traefik
+/mark-track/traefik/*

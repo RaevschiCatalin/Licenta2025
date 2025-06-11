@@ -78,15 +78,16 @@ async def login(
             expires_delta=access_token_expires
         )
         
-        # Set JWT as HttpOnly cookie (for dev, secure=False)
+        # Set JWT as HttpOnly cookie
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,  # Set to True in production
-            samesite="lax",
+            secure=True,  # Always use secure cookies
+            samesite="strict",  # Strict SameSite policy
             max_age=3600,
-            path="/"
+            path="/",
+            domain="myapp.localhost"  # Match your domain
         )
         
         logger.info(f"Login successful for user {user.id}")
@@ -141,15 +142,16 @@ async def register_user(
             data={"sub": new_user.email, "role": new_user.role},
             expires_delta=access_token_expires
         )
-        # Set JWT as HttpOnly cookie (for dev, secure=False)
+        # Set JWT as HttpOnly cookie
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,  # Set to True in production
-            samesite="lax",
+            secure=True,  # Always use secure cookies
+            samesite="strict",  # Strict SameSite policy
             max_age=3600,
-            path="/"
+            path="/",
+            domain="myapp.localhost"  # Match your domain
         )
         logger.info(f"Successfully created user: {user_data.email}")
         return {"access_token": access_token, "token_type": "bearer"}
@@ -219,8 +221,9 @@ async def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         path="/",
-        secure=False,  # Set to True in production
+        secure=True,  # Always use secure cookies
         httponly=True,
-        samesite="lax"
+        samesite="strict",
+        domain="myapp.localhost"  # Match your domain
     )
     return {"message": "Successfully logged out"}

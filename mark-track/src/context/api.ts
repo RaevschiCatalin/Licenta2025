@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const api = axios.create({
     baseURL: apiBaseUrl,
@@ -15,6 +15,16 @@ const api = axios.create({
 // Add request interceptor for debugging
 api.interceptors.request.use(
     (config) => {
+        // Ensure HTTPS is used and remove trailing slashes
+        if (config.url) {
+            if (config.url.startsWith('http://')) {
+                config.url = config.url.replace('http://', 'https://');
+            }
+            // Remove trailing slash if present
+            if (config.url.endsWith('/')) {
+                config.url = config.url.slice(0, -1);
+            }
+        }
         console.log('Making request to:', config.url);
         return config;
     },
@@ -62,6 +72,7 @@ export const postRequest = async <T>(url: string, data: T, config?: any) => {
 export const getRequest = async (url: string) => {
     try {
         const response = await api.get(url);
+        console.log(url);
         return response.data;
     } catch (error) {
         throw error;
