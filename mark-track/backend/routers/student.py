@@ -4,7 +4,7 @@ from sqlalchemy import text
 import logging
 
 from database.postgres_setup import get_db
-from models.database_models import Subject, Teacher, User, Student, Class, Mark as MarkModel, Absence as AbsenceModel, ClassSubject, ClassStudent
+from models.database_models import Subject, Teacher, User, Student, Class, Mark as MarkModel, Absence as AbsenceModel, ClassSubject, ClassStudent, Notification
 from routers.auth import get_current_user
 
 # Configure logging
@@ -132,48 +132,76 @@ async def get_student_absences(
         raise HTTPException(status_code=500, detail=f"Error fetching absences: {str(e)}")
 
 @router.get("/notifications")
-async def get_student_notifications(student_id: str = Query(...), db: Session = Depends(get_db)):
+async def get_student_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        student = db.execute(text(f"SELECT * FROM students WHERE user_id = '{student_id}'")).mappings().fetchone()
+        if current_user.role != 'student':
+            raise HTTPException(status_code=403, detail="Only students can access this endpoint")
+
+        student = db.query(Student).filter(Student.user_id == current_user.id).first()
         if not student:
-            raise HTTPException(status_code=401, detail="Unauthorized")
+            raise HTTPException(status_code=404, detail="Student not found")
 
-        # Direct SQL query for SQL injection vulnerability
-        notifications = db.execute(text(f"""
-            SELECT n.*, s.name as subject_name, t.first_name as teacher_first_name, t.last_name as teacher_last_name
-            FROM notifications n
-            JOIN subjects s ON n.subject_id = s.id
-            JOIN teachers t ON n.teacher_id = t.id
-            WHERE n.student_id = '{student['id']}'
-            ORDER BY n.date DESC
-        """)).mappings().all()
+        # Get notifications using ORM
+        notifications = (
+            db.query(Notification)
+            .join(Subject)
+            .join(Teacher)
+            .filter(Notification.student_id == student.id)
+            .order_by(Notification.date.desc())
+            .all()
+        )
 
-        notifications_list = [dict(n) for n in notifications]
+        notifications_list = [{
+            "id": n.id,
+            "subject_name": n.subject.name,
+            "teacher_first_name": n.teacher.first_name,
+            "teacher_last_name": n.teacher.last_name,
+            "value": n.value,
+            "is_motivated": n.is_motivated,
+            "description": n.description,
+            "date": n.date,
+            "is_read": n.is_read
+        } for n in notifications]
+
         return {"notifications": notifications_list}
     except Exception as e:
         logger.error(f"Error fetching notifications: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error fetching notifications: {str(e)}")
 
 @router.delete("/notifications/{notification_id}")
-async def delete_student_notification(notification_id: str, student_id: str = Query(...), db: Session = Depends(get_db)):
+async def delete_student_notification(
+    notification_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
-        # Direct SQL query for SQL injection vulnerability
-        student = db.execute(text(f"SELECT * FROM students WHERE user_id = '{student_id}'")).mappings().fetchone()
-        if not student:
-            raise HTTPException(status_code=401, detail="Unauthorized")
+        if current_user.role != 'student':
+            raise HTTPException(status_code=403, detail="Only students can access this endpoint")
 
-        # Direct SQL query for SQL injection vulnerability
-        notification = db.execute(text(f"SELECT * FROM notifications WHERE id = '{notification_id}'")).mappings().fetchone()
+        student = db.query(Student).filter(Student.user_id == current_user.id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+
+        # Get notification using ORM
+        notification = (
+            db.query(Notification)
+            .filter(Notification.id == notification_id)
+            .first()
+        )
+        
         if not notification:
             raise HTTPException(status_code=404, detail="Notification not found")
 
-        if notification['student_id'] != student['id']:
+        if notification.student_id != student.id:
             raise HTTPException(status_code=403, detail="Not authorized to delete this notification")
 
-        # Direct SQL query for SQL injection vulnerability
-        db.execute(text(f"DELETE FROM notifications WHERE id = '{notification_id}'"))
+        # Delete notification using ORM
+        db.delete(notification)
         db.commit()
+        
         return {"message": "Notification deleted successfully"}
     except Exception as e:
         logger.error(f"Error deleting notification: {str(e)}", exc_info=True)
