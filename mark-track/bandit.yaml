@@ -1,0 +1,6 @@
+exclude_dirs:
+  - backend/venv
+  - backend/tests
+  - backend/database
+skips:
+  - B101
